@@ -25,14 +25,6 @@ module Supernova
   end
   
   class << self
-    def immutable!
-      @immutable = true
-    end
-    
-    def immutable?
-      @immutable == true
-    end
-    
     def build_ar_like_record(clazz, attributes, original_search_doc = nil)
       record = clazz.new
       record.instance_variable_set("@attributes", attributes)

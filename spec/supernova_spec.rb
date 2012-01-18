@@ -6,25 +6,6 @@ describe Supernova do
     clazz.send(:include, Supernova::Solr)
   end
   
-  describe "#immutable!" do
-    it "is callable" do
-      lambda {
-        Supernova.immutable!
-      }.should_not raise_error
-    end
-  end
-  
-  describe "#immutable?" do
-    it "returns false by default (for now)" do
-      Supernova.should_not be_immutable
-    end
-    
-    it "returns true when immutable! called before" do
-      Supernova.immutable!
-      Supernova.should be_immutable
-    end
-  end
-  
   describe "#including" do
     it "can be includes" do
       Class.new.send(:include, Supernova::Solr)

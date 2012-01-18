@@ -17,12 +17,33 @@ class Supernova::Criteria
     def select(*args)
       self.new.send(:select, *args)
     end
+    
+    def immutable_by_default!
+      @immutable_by_default = true
+    end
+    
+    def mutable_by_default!
+      @immutable_by_default = false
+    end
+    
+    def immutable_by_default?
+      @immutable_by_default == true
+    end
   end
 
   def initialize(clazz = nil)
     self.clazz = clazz
     self.filters = {}
     self.search_options = {}
+    self.immutable! if self.class.immutable_by_default?
+  end
+  
+  def immutable!
+    @immutable = true
+  end
+  
+  def immutable?
+    @immutable == true
   end
 
   def for_classes(clazzes)

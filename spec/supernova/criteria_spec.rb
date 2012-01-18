@@ -15,6 +15,18 @@ describe "Supernova::Criteria" do
     it "sets the clazz_name" do
       Supernova::Criteria.new(Offer).clazz.should == Offer
     end
+    
+    it "allows setting immutable!" do
+      a = Supernova::Criteria.new
+      a.immutable!
+      a.should be_immutable
+    end
+    
+    it "automatically sets the criteria to immutable when globally enabled" do
+      Supernova::Criteria.immutable_by_default!
+      a = Supernova::Criteria.new
+      a.should be_immutable
+    end
   end
   
   [
