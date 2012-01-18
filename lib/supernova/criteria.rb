@@ -158,7 +158,7 @@ class Supernova::Criteria
   end
   
   def populated?
-    instance_variables.include?("@results")
+    instance_variables.map(&:to_s).include?("@results")
   end
   
   def execute
@@ -196,7 +196,7 @@ class Supernova::Criteria
   end
 
   def method_missing(*args, &block)
-    if Supernova::Collection.instance_methods.include?(args.first.to_s)
+    if Supernova::Collection.instance_methods.map(&:to_s).include?(args.first.to_s)
       populate
       @results.send(*args, &block)
     elsif self.named_scope_defined?(args.first)

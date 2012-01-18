@@ -232,6 +232,7 @@ class Supernova::SolrIndexer
   end
   
   def index_with_json(rows)
+    return false if rows.empty?
     options && options[:use_json_file] ? index_with_json_file(rows) : index_with_json_string(rows)
   end
   
@@ -246,11 +247,13 @@ class Supernova::SolrIndexer
     index_rows(query_db(query))
   end
   
+  # just to be backwards compatible
   def index_directly(rows)
-    rows.each do |row|
-      row = Supernova::Solr.connection.add(row)
-    end
-    Supernova::Solr.connection.commit if rows.any?
+    index_with_json(rows)
+    # rows.each do |row|
+    #   row = Supernova::Solr.connection.add(row)
+    # end
+    # Supernova::Solr.connection.commit if rows.any?
   end
   
   def index_with_json_file(rows)

@@ -147,6 +147,7 @@ describe "Supernova::Criteria" do
     
     it "returns the results" do
       res = double("results")
+      scope.stub!(:populate)
       scope.instance_variable_set("@results", res)
       scope.to_a.should == res
     end
@@ -240,7 +241,7 @@ describe "Supernova::Criteria" do
     it "forwards all array methods to @results" do
       results = double("results")
       scope.instance_variable_set("@results", results)
-      results.should_receive(:index, "1")
+      results.should_receive(:index).with("1")
       scope.index("1")
     end
     

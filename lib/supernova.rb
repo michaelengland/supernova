@@ -1,6 +1,6 @@
-require "rsolr"
 require "active_support/core_ext/object/blank"
 require "active_support/core_ext/hash"
+require "will_paginate/collection"
 
 module Supernova
   KM_TO_METER = 1000.0

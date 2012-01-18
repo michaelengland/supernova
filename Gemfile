@@ -6,16 +6,15 @@ source "http://rubygems.org"
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.
 
-gem "rsolr"
 gem "will_paginate"
 gem "json"
 gem "activesupport"
-gem "typhoeus"
+gem "typhoeus", '0.3.3'
 
 group :development do
   gem "i18n"
   gem 'activerecord', '~>3.0.7', :require => "active_record"
-  gem "ruby-debug"
+  gem "ruby-debug#{RUBY_VERSION != "1.8.7" ? "19" : ""}"
   gem "mysql2", "~> 0.2.7"
   gem "ZenTest", "4.5.0"
   gem "geokit"

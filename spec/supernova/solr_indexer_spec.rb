@@ -452,6 +452,14 @@ describe Supernova::SolrIndexer do
       indexer.index_with_json([1])
     end
     
+    it "does not break when called with empty array" do
+      index.should_not_receive(:index_with_json_string)
+      index.should_not_receive(:index_with_json_file)
+      lambda {
+        indexer.index_with_json([])
+      }.should_not raise_error
+    end
+    
     it "calls index_with_json_file when asked to" do
       indexer.options[:use_json_file] = true
       indexer.should_receive(:index_with_json_file).with([1])
@@ -460,10 +468,10 @@ describe Supernova::SolrIndexer do
   end
   
   describe "#index_rows" do
-    let(:row1) { double("row1") }
-    let(:row2) { double("row2") }
-    let(:mapped1) { double("mapped 1") }
-    let(:mapped2) { double("mapped 2") }
+    let(:row1) { { :id => "row1" } }
+    let(:row2) { { :id => "row2" } }
+    let(:mapped1) { { :id => "mapped1" } }
+    let(:mapped2) { { :id => "mapped2" } }
     
     before(:each) do
       custom_indexer.stub(:map_for_solr).with(row1).and_return(mapped1)
@@ -525,21 +533,27 @@ describe Supernova::SolrIndexer do
       Supernova::Solr.stub!(:connection).and_return solr
     end
     
-    it "calls the correct add statement" do
+    it "deligates to index_with_json" do
       row1 = double("1")
       row2 = double("2")
       rows = [row1, row2]
+      indexer.should_receive(:index_with_json).with(rows).and_return "the result"
+      indexer.index_directly(rows).should == "the result"
+    end
+    
+    xit "calls the correct add statement" do
+
       solr.should_receive(:add).with(row1)
       solr.should_receive(:add).with(row2)
       indexer.index_directly(rows)
     end
     
-    it "calls commit" do
+    xit "calls commit" do
       solr.should_receive(:commit)
       indexer.index_directly([double("1")])
     end
     
-    it "does not call commit when rows is empty" do
+    xit "does not call commit when rows is empty" do
       solr.should_not_receive(:commit)
       indexer.index_directly([])
     end

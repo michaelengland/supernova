@@ -1,24 +1,25 @@
+# -*- encoding : utf-8 -*-
 require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
 
 describe "Solr" do
   before(:each) do
     Supernova::Solr.instance_variable_set("@connection", nil)
-    Supernova::Solr.url = "http://localhost:8985/solr/"
+    Supernova::Solr.url = "http://localhost:8983/solr/supernova_test"
     Supernova::Solr.truncate!
     Offer.criteria_class = Supernova::SolrCriteria
     root = Geokit::LatLng.new(47, 11)
     # endpoint = root.endpoint(90, 50, :units => :kms)
     e_lat = 46.9981112912042
     e_lng = 11.6587158814378
-    Supernova::Solr.connection.add(:id => "offers/1", :type => "Offer", :user_id_i => 1, :enabled_b => false, 
+    Supernova::Solr.add(:id => "offers/1", :type => "Offer", :user_id_i => 1, :enabled_b => false, 
       :text_t => "Hans Meyer", :popularity_i => 10, 
       :location_p => "#{root.lat},#{root.lng}", :type => "Offer"
     )
-    Supernova::Solr.connection.add(:id => "offers/2", :user_id_i => 2, :enabled_b => true, :text_t => "Marek Mintal", 
+    Supernova::Solr.add(:id => "offers/2", :user_id_i => 2, :enabled_b => true, :text_t => "Marek Mintal", 
       :popularity_i => 1, 
       :location_p => "#{e_lat},#{e_lng}", :type => "Offer"
     )
-    Supernova::Solr.connection.commit
+    Supernova::Solr.commit!
   end
   
   after(:each) do
@@ -40,7 +41,7 @@ describe "Solr" do
           { :title_s => "Title2", :id => 2, :type => "Record" } 
         ]
       )
-      response = Supernova::Solr.connection.get('select', :params => { :q=>'*:*', :start=>0, :rows=>10, :sort => "id asc" })
+      response = JSON.parse(Typhoeus::Request.post(Supernova::Solr.select_url, :params => { :q=>'*:*', :start=>0, :rows=>10, :sort => "id asc", :wt => "json" }).body)
       response["response"]["docs"].first.should == { "title_s" => "Title1", "id" => "1", "type" => "Record" }
       response["response"]["docs"].at(1).should == { "title_s" => "Title2", "id" => "2", "type" => "Record" }
     end
@@ -49,7 +50,7 @@ describe "Solr" do
   describe "#indexing" do
     before(:each) do
       Supernova::Solr.truncate!
-      Supernova::Solr.connection.commit
+      Supernova::Solr.commit!
     end
     
     class OfferIndex < Supernova::SolrIndexer
@@ -182,10 +183,10 @@ describe "Solr" do
     
     describe "not searches" do
       it "finds the correct documents for not nil" do
-        Supernova::Solr.connection.add(:id => "offers/3", :enabled_b => true, :text_t => "Marek Mintal", :popularity_i => 1, 
+        Supernova::Solr.add(:id => "offers/3", :enabled_b => true, :text_t => "Marek Mintal", :popularity_i => 1, 
           :type => "Offer"
         )
-        Supernova::Solr.connection.commit
+        Supernova::Solr.commit!
         raise "There should be 3 docs" if new_criteria.total_entries != 3
         new_criteria.with(:user_id_i.not => nil).map { |h| h["id"] }.should == [1, 2]
       end
@@ -261,11 +262,25 @@ describe "Solr" do
   describe "#facets" do
     it "returns the correct facets hash" do
       # pending "fix me"
-      Supernova::Solr.connection.add(:id => "offers/3", :type => "Offer", :user_id_i => 3, :enabled_b => false, 
+      Supernova::Solr.add(:id => "offers/3", :type => "Offer", :user_id_i => 3, :enabled_b => false, 
         :text_t => "Hans Müller", :popularity_i => 10, :type => "Offer"
       )
-      Supernova::Solr.connection.commit
-      new_criteria.facet_fields(:text_t).execute.facets.should == {"text_t"=>{"mintal"=>1, "marek"=>1, "meyer"=>1, "m\303\274ller"=>1, "han"=>2}}
+      Supernova::Solr.commit!
+      new_criteria.facet_fields(:text_t).execute.facets.should == {"text_t"=>{"mintal"=>1, "marek"=>1, "meyer"=>1, "müller"=>1, "han"=>2}}
+    end
+  end
+  
+  describe "#execute_raw" do
+    it "returns a hash" do
+      new_criteria.execute_raw.should be_kind_of(Hash)
+    end
+    
+    it "should not be empty" do
+      new_criteria.execute_raw.keys.should_not be_empty
+    end
+    
+    it "includes th ecorrect headers" do
+      new_criteria.execute_raw.keys.sort.should == %w(responseHeader response).sort
     end
   end
   
@@ -310,7 +325,7 @@ describe "Solr" do
         row3 = { "id" => 3, "location" => "Berlin", "type" => "Offer" }
         row4 = { "id" => 4, "location" => "München", "type" => "Offer" }
         Supernova::Solr.truncate!
-        Supernova::Solr.connection.commit
+        Supernova::Solr.commit!
         @clazz.new.index_rows([row1, row2, row3, row4])
       end
       

@@ -3,7 +3,6 @@ require "ostruct"
 
 describe Supernova::SolrCriteria do
   let(:criteria) { Supernova::SolrCriteria.new }
-  let(:rsolr) { double("rsolr").as_null_object }
   let(:docs) do
     [
       {"popularity"=>10, "location"=>"47,11", "text"=>"Hans Meyer", "id"=>"offers/1", "enabled"=>false, "user_id"=>1, "type"=>"Offer"}, 
@@ -14,10 +13,6 @@ describe Supernova::SolrCriteria do
     {
       "response"=>{"start"=>0, "docs"=>docs, "numFound"=>2}, "responseHeader"=>{"QTime"=>4, "params"=>{"fq"=>"type:Offer", "q"=>"*:*", "wt"=>"ruby"}, "status"=>0}
     }
-  end
-  
-  before(:each) do
-    Supernova::Solr.stub!(:connection).and_return rsolr
   end
   
   describe "#fq_from_with" do
@@ -228,11 +223,11 @@ describe Supernova::SolrCriteria do
   end
 
   describe "#execute" do
-    let(:params) { double("params") }
+    let(:params) { {} }
     
     before(:each) do
+      criteria.stub(:execute_raw).and_return(solr_response)
       criteria.stub(:to_params).and_return params
-      rsolr.stub!(:post).and_return solr_response
     end
     
     it "sets the original response" do
@@ -240,12 +235,7 @@ describe Supernova::SolrCriteria do
     end
     
     it "calls to_params" do
-      criteria.should_receive(:to_params).and_return params
-      criteria.execute
-    end
-    
-    it "calls get with select and params" do
-      rsolr.should_receive(:post).with("select", :data => params).and_return solr_response
+      criteria.should_receive(:execute_raw).and_return solr_response
       criteria.execute
     end
     
@@ -292,7 +282,7 @@ describe Supernova::SolrCriteria do
     end
     
     it "sets the correct facets" do
-      rsolr.stub!(:post).and_return facet_response
+      criteria.stub!(:execute_raw).and_return(facet_response)
       criteria.should_receive(:hashify_facets_from_response).with(facet_response).and_return({ :a => 1 })
       criteria.execute.facets.should == {:a => 1}
     end

@@ -1,4 +1,4 @@
-require "rsolr"
+# -*- encoding : utf-8 -*-
 
 class Supernova::SolrCriteria < Supernova::Criteria
   # move this into separate methods (test each separatly)
@@ -166,8 +166,12 @@ class Supernova::SolrCriteria < Supernova::Criteria
     end
   end
   
+  def execute_raw
+    JSON.parse(Typhoeus::Request.post(Supernova::Solr.select_url, :params => to_params.merge(:wt => "json")).body)
+  end
+  
   def execute
-    response = Supernova::Solr.connection.post("select", :data => to_params)
+    response = execute_raw
     collection = Supernova::Collection.new(current_page, per_page == 0 ? 1 : per_page, response["response"]["numFound"])
     collection.original_response = response
     collection.facets = hashify_facets_from_response(response)

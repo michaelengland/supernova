@@ -1,10 +1,8 @@
 require 'spec_helper'
 
 describe Supernova::Solr do
-  let(:rsolr) { double("rsolr") }
-  
   before(:each) do
-    RSolr.stub!(:connect).and_return rsolr
+    Supernova::Solr.url = "http://some.host:12345/path/to/solr"
   end
   
   describe "#url=" do
@@ -14,32 +12,21 @@ describe Supernova::Solr do
     end
   end
   
-  describe "#solr_connection" do
-    after(:each) do
-      Supernova::Solr.url = nil
-    end
-    
-    before(:each) do
-      Supernova::Solr.url = "/some/url"
-    end
-    
-    it "connects creates and stores a new RSolr connection" do
-      RSolr.should_receive(:connect).with(:url => "/some/url").and_return rsolr
-      Supernova::Solr.connection.should == rsolr
-      Supernova::Solr.instance_variable_get("@connection").should == rsolr
-    end
-    
-    it "returns a stored connection" do
-      con = double("con")
-      Supernova::Solr.instance_variable_set("@connection", con)
-      Supernova::Solr.connection.should == con
+  describe "truncate!" do
+    it "sends the correct update request" do
+      Typhoeus::Request.should_receive(:post).with("http://some.host:12345/path/to/solr/update", 
+        :body => %(<?xml version="1.0" encoding="UTF-8"?><delete><query>*:*</query></delete>), :headers => { "Content-Type" => "text/xml"}
+      )
+      Supernova::Solr.truncate!
     end
   end
   
-  describe "truncate!" do
-    it "calls delete_by_query on connection" do
-      Supernova::Solr.connection.should_receive(:delete_by_query).with("*:*")
-      Supernova::Solr.truncate!
+  describe "#commit!" do
+    it "sends the correct update request" do
+      Typhoeus::Request.should_receive(:post).with("http://some.host:12345/path/to/solr/update", 
+        :body => %(<?xml version="1.0" encoding="UTF-8"?><commit />), :headers => { "Content-Type" => "text/xml"}
+      )
+      Supernova::Solr.commit!
     end
   end
 end
