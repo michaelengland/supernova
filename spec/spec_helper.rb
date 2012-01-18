@@ -25,6 +25,7 @@ Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 RSpec.configure do |config|
   config.before(:each) do
     ActiveRecord::Base.connection.execute("TRUNCATE offers")
+    Supernova.instance_variable_set("@immutable", nil)
   end
 end
 
