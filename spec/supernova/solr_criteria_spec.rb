@@ -206,9 +206,10 @@ describe Supernova::SolrCriteria do
   
   describe "#ids" do
     it "sets the select fields to id only" do
-      criteria.should_receive(:select).with("id")
-      criteria.stub!(:execute).and_return([])
-      criteria.ids
+      scope = double("scope")
+      criteria.should_receive(:only_ids).and_return(scope)
+      scope.should_receive(:execute).and_return([])
+      criteria.ids.should == []
     end
     
     it "calls execute" do
@@ -218,8 +219,37 @@ describe Supernova::SolrCriteria do
     
     it "maps the id hashes to ids" do
       criteria.stub(:execute).and_return([ { "id" => "offer/1" }, { "id" => "offer/3" } ])
-      criteria.ids
+      criteria.ids.should == [1, 3]
     end
+  end
+  
+  describe "#format" do
+    it "sets the correct search_options" do
+      criteria.format("csv").search_options[:wt].should == "csv"
+    end
+    
+    it "includes the format in the params" do
+      criteria.format("csv").to_params[:wt].should == "csv"
+    end
+    
+    it "allows overriding of formats" do
+      criteria.format("csv").format("json").to_params[:wt].should == "json"
+    end
+  end
+  
+  describe "#only_ids" do
+    it "returns a criteria" do
+      criteria.only_ids.should be_kind_of(Supernova::SolrCriteria)
+    end
+    
+    it "only selects the id column" do
+      a = criteria.select("name_s").only_ids
+      a.to_params[:fl].should == "id"
+    end
+    
+    # it "does something" do
+    #   
+    # end
   end
 
   describe "#execute" do

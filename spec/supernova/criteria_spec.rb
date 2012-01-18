@@ -243,6 +243,130 @@ describe "Supernova::Criteria" do
     end
   end
   
+  describe "#clone" do
+    it "returns a new Supernova::Criteria" do
+      Supernova::Criteria.new.clone.should be_kind_of(Supernova::Criteria)
+    end
+    
+    it "also clones the attributes" do
+      a = Supernova::Criteria.new
+      b = a.clone
+      b.immutable?.should == false
+      a.search_options[:a] = 1
+      b.search_options[:a].should be_nil
+    end
+    
+    it "makes the cloned collection immutable" do
+      a = Supernova::Criteria.new
+      a.immutable!
+      b = a.clone
+      b.immutable?.should == true
+    end
+  end
+  
+  describe "#self_or_clone" do
+    it "returns self when immutable is off" do
+      a = Supernova::Criteria.new
+      a.self_or_clone.should == a
+    end
+    
+    it "returns a clone when immutable is on" do
+      a = Supernova::Criteria.new
+      a.immutable!
+      b = a.self_or_clone
+      b.should be_kind_of(Supernova::Criteria)
+      b.should_not == a
+    end
+  end
+  
+  describe "#merge_filters_array" do
+    describe "when mutable" do
+      it "returns self" do
+        a = Supernova::Criteria.new
+        a.merge_filters_array(:a, [1, 2, 3]).should == a
+        a.search_options[:a].should == [1, 2, 3]
+      end
+    end
+    
+    describe "when immutable" do
+      it "returns self" do
+        a = Supernova::Criteria.new
+        a.immutable!
+        b = a.merge_filters_array(:a, [1, 2, 3])
+        b.should_not == a
+        a.search_options[:a].should be_nil
+        b.search_options[:a].should == [1, 2, 3]
+      end
+    end
+  end
+  
+  describe "#without" do
+    describe "when mutable" do
+      it "returns self" do
+        a = Supernova::Criteria.new
+        a.without(:a => 1).should == a
+        a.filters[:without].should == { :a => [1] }
+      end
+    end
+    
+    describe "when immutable" do
+      it "returns self" do
+        a = Supernova::Criteria.new
+        a.immutable!
+        b = a.without(:a => 2)
+        b.should_not == a
+        a.filters[:without].should be_nil
+        b.filters[:without].should == { :a => [2] }
+      end
+    end
+  end
+  
+  
+  describe "#merge_filters_or_search_options" do
+    describe "when mutable" do
+      it "returns self" do
+        a = Supernova::Criteria.new
+        a.merge_filters_or_search_options(:search_options, :per_page, 1).should == a
+        a.search_options[:per_page].should == 1
+      end
+    end
+    
+    describe "when immutable" do
+      it "returns a new criteria" do
+        a = Supernova::Criteria.new
+        a.immutable!
+        b = a.merge_filters_or_search_options(:search_options, :per_page, 3)
+        a.search_options[:per_page].should be_nil
+        b.search_options[:per_page].should == 3
+      end
+    end
+  end
+  
+  describe "#except" do
+    describe "being mutable" do
+      it "returns the criteria" do
+        a = Supernova::Criteria.new
+        a.except(:order).should be_kind_of(Supernova::Criteria)
+      end
+      
+      it "removes the specified field" do
+        a = Supernova::Criteria.new
+        a.order("id").except(:order).search_options[:order].should be_nil
+      end
+    end
+    
+    describe "being immutable" do
+      it "returns a different criteria with the field removed" do
+        a = Supernova::Criteria.new.order("id").where(:a => 1)
+        a.immutable!
+        b = a.except(:order)
+        b.search_options[:order].should be_nil
+        b.filters[:with].should == { :a => 1 }
+        a.search_options[:order].should == "id"
+      end
+    end
+  end
+  
   describe "#method_missing" do
     it "raises a no method error when methd not defined" do
       lambda {
@@ -346,17 +470,32 @@ describe "Supernova::Criteria" do
     it "calls merge on options" do
       criteria.stub!(:search_options).and_return({ :x => 2, :y => 9 })
       new_crit.stub!(:search_options).and_return({ :z => 3, :c => 1 })
-      new_crit.should_receive(:merge_search_options).with(:x, 2)
-      new_crit.should_receive(:merge_search_options).with(:y, 9)
+      new_crit.should_receive(:merge_search_options).with(:x, 2).and_return(new_crit)
+      new_crit.should_receive(:merge_search_options).with(:y, 9).and_return(new_crit)
       new_crit.merge(criteria)
     end
     
     it "calls merge filters on all filters" do
       criteria.stub!(:filters).and_return({ :a => 1, :c => 3 })
       new_crit.stub!(:filters).and_return({ :b => 2, :e => 1 })
-      new_crit.should_receive(:merge_filters).with(:a, 1)
-      new_crit.should_receive(:merge_filters).with(:c, 3)
+      new_crit.should_receive(:merge_filters).with(:a, 1).and_return(new_crit)
+      new_crit.should_receive(:merge_filters).with(:c, 3).and_return(new_crit)
       new_crit.merge(criteria)
+    end
+    
+    describe "when immutable" do
+      it "merges two filters but does not break " do
+        a = Supernova::Criteria.new.with(:a => 1)
+        a.immutable!
+        b = Supernova::Criteria.new.with(:b => 2)
+        b.immutable!
+        c = a.merge(b)
+        c.should_not == a
+        c.should_not == b
+        a.filters[:with].should == { :a => 1 }
+        b.filters[:with].should == { :b => 2 }
+        c.filters[:with].should == { :a => 1, :b => 2 }
+      end
     end
   end
   

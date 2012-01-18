@@ -4,6 +4,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
   # move this into separate methods (test each separatly)
   def to_params
     solr_options = { :fq => [], :q => "*:*" }
+    solr_options[:wt] = search_options[:wt] if search_options[:wt]
     solr_options[:fq] += fq_from_with(self.filters[:with])
     if self.filters[:without]
      self.filters[:without].each do |field, values| 
@@ -22,7 +23,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
       solr_options[:fq] << "{!geofilt}"
     end
     if self.search_options[:select]
-      self.search_options[:select] << :id
+      self.search_options[:select] << "id" if !self.search_options[:select].map(&:to_s).include?("id")
       solr_options[:fl] = self.search_options[:select].compact.map { |field| solr_field_from_field(field) }.join(",") 
     end
     solr_options[:fq] << "type:#{self.clazz}" if self.clazz
@@ -147,6 +148,10 @@ class Supernova::SolrCriteria < Supernova::Criteria
     end
   end
   
+  def format(the_format)
+    merge_search_options(:wt, the_format)
+  end
+  
   def set_first_responding_attribute(doc, solr_key, value)
     [reverse_lookup_solr_field(solr_key), solr_key].each do |key|
       meth = :"#{key}="
@@ -179,8 +184,13 @@ class Supernova::SolrCriteria < Supernova::Criteria
     collection
   end
   
+  def only_ids
+    self_or_clone.except(:select).select("id")
+  end
+  
   def ids
-    select("id")
-    execute.map! { |h| h["id"].split("/").last.to_i }
+    only_ids.execute.tap do |col|
+      col.replace(col.map { |h| h["id"].split("/").last.to_i })
+    end
   end
 end

@@ -79,12 +79,13 @@ class Supernova::Criteria
   end
   
   def without(filters)
-    self.filters[:without] ||= Hash.new
-    filters.each do |key, value|
-      self.filters[:without][key] ||= Array.new
-      self.filters[:without][key] << value if !self.filters[:without][key].include?(value)
+    self_or_clone.tap do |soc|
+      soc.filters[:without] ||= Hash.new
+      filters.each do |key, value|
+        soc.filters[:without][key] ||= Array.new
+        soc.filters[:without][key] << value if !soc.filters[:without][key].include?(value)
+      end
     end
-    self
   end
 
   def select(*fields)
@@ -136,32 +137,49 @@ class Supernova::Criteria
   end
 
   def merge_filters(key, value)
-    merge_filters_or_search_options(self.filters, key, value)
+    merge_filters_or_search_options(:filters, key, value)
   end
   
   def merge_filters_array(key, fields)
-    self.search_options[key] ||= Array.new
-    fields.flatten.each do |field|
-      self.search_options[key] << field if !self.search_options[key].include?(field)
+    self_or_clone.tap do |soc|
+      soc.search_options[key] ||= Array.new
+      fields.flatten.each do |field|
+        soc.search_options[key] << field if !soc.search_options[key].include?(field)
+      end
     end
-    self
+  end
+  
+  def clone
+    Marshal.load(Marshal.dump(self))
+  end
+  
+  def self_or_clone
+    immutable? ? clone : self
   end
 
   def merge_search_options(key, value)
-    merge_filters_or_search_options(self.search_options, key, value)
+    merge_filters_or_search_options(:search_options, key, value)
+  end
+  
+  def except(key)
+    self_or_clone.tap do |soc|
+      soc.search_options.delete(key)
+    end
   end
 
-  def merge_filters_or_search_options(reference, key, value)
-    if value.is_a?(Hash)
-      reference[key] ||= Hash.new
-      reference[key].merge!(value)
-    elsif key == :select
-      reference[key] ||= Array.new
-      reference[key] += (value || [])
-    else
-      reference[key] = value
+  def merge_filters_or_search_options(reference_method, key, value)
+    self_or_clone.tap do |soc|
+      reference = soc.send(reference_method)
+      if value.is_a?(Hash)
+        reference[key] ||= Hash.new
+        reference[key].merge!(value)
+      elsif key == :select
+        reference[key] ||= Array.new
+        reference[key] += (value || [])
+      else
+        reference[key] = value
+      end
     end
-    self
   end
 
   def to_parameters
@@ -207,13 +225,14 @@ class Supernova::Criteria
   end
   
   def merge(other_criteria)
+    ret = self_or_clone
     other_criteria.filters.each do |key, value|
-      self.merge_filters(key, value)
+      ret = ret.merge_filters(key, value)
     end
     other_criteria.search_options.each do |key, value|
-      self.merge_search_options(key, value)
+      ret = ret.merge_search_options(key, value)
     end
-    self
+    ret
   end
 
   def method_missing(*args, &block)
