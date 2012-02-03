@@ -13,7 +13,7 @@ module Supernova::Solr
     end
     
     def deprication_warning(instead)
-      puts "DEPRICATION WARNING: calling #{caller.first[/\`(.*?)\'/, 1]} is depricated. Use Supernova::Supernova.#{instead} instead. Called from #{filter_callers(caller).at(1)}"
+      puts "DEPRICATION WARNING: calling #{caller.first[/\`(.*?)\'/, 1]} is depricated. Use Supernova::Solr.#{instead} instead. Called from #{filter_callers(caller).at(1)}"
     end
     
     def filter_callers(callers)
