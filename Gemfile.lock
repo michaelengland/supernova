@@ -76,4 +76,4 @@ DEPENDENCIES
   rspec (~> 2.8.0)
   ruby-debug19
   typhoeus (= 0.3.3)
-  will_paginate (= 3.0.3)
+  will_paginate
