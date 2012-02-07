@@ -54,8 +54,8 @@ class Supernova::Criteria
     merge_search_options :attribute_mapping, mapping
   end
 
-  def order(order_option)
-    merge_search_options :order, order_option
+  def order(*order_options)
+    merge_search_options :order, order_options
   end
 
   def limit(limit_option)
@@ -173,7 +173,7 @@ class Supernova::Criteria
       if value.is_a?(Hash)
         reference[key] ||= Hash.new
         reference[key].merge!(value)
-      elsif key == :select
+      elsif [:select, :order].include?(key)
         reference[key] ||= Array.new
         reference[key] += (value || [])
       else

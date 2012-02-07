@@ -11,7 +11,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
        solr_options[:fq] += values.map { |value| "!#{solr_field_from_field(field)}:#{value}" }
      end
     end
-    solr_options[:sort] = convert_search_order(self.search_options[:order]) if self.search_options[:order]
+    solr_options[:sort] = convert_search_order(self.search_options[:order].join(", ")) if self.search_options[:order]
     if self.search_options[:search].is_a?(Array)
       solr_options[:q] = self.search_options[:search].map { |query| "(#{query})" }.join(" AND ")
     end
@@ -41,13 +41,13 @@ class Supernova::SolrCriteria < Supernova::Criteria
   end
   
   def convert_search_order(order)
-    asc_or_desc = nil
-    field = solr_field_from_field(order)
-    if order.match(/^(.*?) (asc|desc)/i)
-      field = solr_field_from_field($1)
-      asc_or_desc = $2
-    end
-    [field, asc_or_desc].compact.join(" ")
+    order.split(/\s*,\s*/).map do |chunk|
+      if chunk.match(/(.*?) (asc|desc)/i)
+        "#{solr_field_from_field($1)} #{$2}"
+      else
+        chunk
+      end
+    end.join(", ")
   end
   
   def solr_field_from_field(field)

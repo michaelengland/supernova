@@ -64,7 +64,7 @@ describe "Supernova::Criteria" do
   
   describe "#order" do
     it "sets the order statement" do
-      scope.order("popularity desc").search_options[:order].should == "popularity desc"
+      scope.order("popularity desc").search_options[:order].should == ["popularity desc"]
     end
   end
   
@@ -362,7 +362,7 @@ describe "Supernova::Criteria" do
         b = a.except(:order)
         b.search_options[:order].should be_nil
         b.filters[:with].should == { :a => 1 }
-        a.search_options[:order].should == "id"
+        a.search_options[:order].should == ["id"]
       end
     end
   end
@@ -427,10 +427,6 @@ describe "Supernova::Criteria" do
     
     it "it returns the original criteria" do
       new_crit.merge(criteria).should == new_crit
-    end
-    
-    it "merges e.g. the order" do
-      new_crit.merge(criteria).search_options[:order].should == "popularity asc"
     end
     
     it "merges e.g. the with filters" do

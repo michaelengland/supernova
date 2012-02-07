@@ -58,6 +58,16 @@ describe Supernova::SolrCriteria do
     end
   end
   
+  describe "#convert_search_order" do
+    it "returns a string" do
+      criteria.convert_search_order("title asc").should == "title asc"
+    end
+    
+    it "returns a complex string" do
+      criteria.convert_search_order("title asc, name desc").should == "title asc, name desc"
+    end
+  end
+  
   describe "#to_params" do
     it "returns a Hash" do
       criteria.to_params.should be_an_instance_of(Hash)
@@ -72,12 +82,35 @@ describe Supernova::SolrCriteria do
     end
     
     it "sets the order field" do
-      criteria.order("title").to_params[:sort].should == "title"
+      criteria.order("title asc").to_params[:sort].should == "title asc"
+    end
+    
+    it "allows more complex order fields" do
+      criteria.order("title asc, name desc").to_params[:sort].should == "title asc, name desc"
+    end
+    
+    it "adds raw fields when not able to extract asc or desc" do
+      criteria.order("some_order_func, test asc").to_params[:sort].should == "some_order_func, test asc"
+    end
+    
+    it "chains order statements" do
+      criteria.order("name asc").order("title desc").to_params[:sort].should == "name asc, title desc"
     end
     
     it "uses a mapped field for order" do
-      criteria.attribute_mapping(:title => { :type => :string }).order("title").to_params[:sort].should == "title_s"
+      criteria.attribute_mapping(:title => { :type => :string }).order("title asc").to_params[:sort].should == "title_s asc"
     end
+    
+    it "allows multi mappings of order criteria when given in one string" do
+      scope = criteria.attribute_mapping(:title => { :type => :string }, :visits => { :type => :integer })
+      scope.order("title asc, visits desc").to_params[:sort].should == "title_s asc, visits_i desc"
+    end
+    
+    it "allows multi mappings of order criteria when chained" do
+      scope = criteria.attribute_mapping(:title => { :type => :string }, :visits => { :type => :integer })
+      scope.order("title asc").order("visits desc").to_params[:sort].should == "title_s asc, visits_i desc"
+    end
+    
     
     %w(asc desc).each do |order|
       it "uses a mapped field for order even when #{order} is present" do
@@ -155,6 +188,10 @@ describe Supernova::SolrCriteria do
       it "sets the fq field to {!geofilt}" do
         nearby_criteria.to_params[:fq].should == ["{!geofilt}"]
       end
+    end
+    
+    it "allows setting of rows" do
+      criteria.rows(11).to_params[:rows].should == 11
     end
     
     describe "pagination" do
