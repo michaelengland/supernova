@@ -47,7 +47,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
       else
         chunk
       end
-    end.join(", ")
+    end.join(",")
   end
   
   def solr_field_from_field(field)

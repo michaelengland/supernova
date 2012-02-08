@@ -64,7 +64,7 @@ describe Supernova::SolrCriteria do
     end
     
     it "returns a complex string" do
-      criteria.convert_search_order("title asc, name desc").should == "title asc, name desc"
+      criteria.convert_search_order("title asc, name desc").should == "title asc,name desc"
     end
   end
   
@@ -86,15 +86,15 @@ describe Supernova::SolrCriteria do
     end
     
     it "allows more complex order fields" do
-      criteria.order("title asc, name desc").to_params[:sort].should == "title asc, name desc"
+      criteria.order("title asc, name desc").to_params[:sort].should == "title asc,name desc"
     end
     
     it "adds raw fields when not able to extract asc or desc" do
-      criteria.order("some_order_func, test asc").to_params[:sort].should == "some_order_func, test asc"
+      criteria.order("some_order_func, test asc").to_params[:sort].should == "some_order_func,test asc"
     end
     
     it "chains order statements" do
-      criteria.order("name asc").order("title desc").to_params[:sort].should == "name asc, title desc"
+      criteria.order("name asc").order("title desc").to_params[:sort].should == "name asc,title desc"
     end
     
     it "uses a mapped field for order" do
@@ -103,12 +103,12 @@ describe Supernova::SolrCriteria do
     
     it "allows multi mappings of order criteria when given in one string" do
       scope = criteria.attribute_mapping(:title => { :type => :string }, :visits => { :type => :integer })
-      scope.order("title asc, visits desc").to_params[:sort].should == "title_s asc, visits_i desc"
+      scope.order("title asc, visits desc").to_params[:sort].should == "title_s asc,visits_i desc"
     end
     
     it "allows multi mappings of order criteria when chained" do
       scope = criteria.attribute_mapping(:title => { :type => :string }, :visits => { :type => :integer })
-      scope.order("title asc").order("visits desc").to_params[:sort].should == "title_s asc, visits_i desc"
+      scope.order("title asc").order("visits desc").to_params[:sort].should == "title_s asc,visits_i desc"
     end
     
     
