@@ -23,6 +23,7 @@ end
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
 RSpec.configure do |config|
+  config.run_all_when_everything_filtered = true
   config.before(:each) do
     ActiveRecord::Base.connection.execute("TRUNCATE offers")
     Supernova::Criteria.mutable_by_default!
