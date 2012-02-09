@@ -94,14 +94,12 @@ describe "Supernova::Criteria" do
     end
   end
   
-  [:with, :conditions].each do |method|
+  
+  
+  [:conditions].each do |method|
     describe "##{method}" do
       it "adds all filters to the #{method} block" do
-        scope.send(method, { :length => 3, :height => 99 }).filters[method].should == { :length => 3, :height => 99 }
-      end
-    
-      it "overwrites before set filters" do
-        scope.send(method, { :length => 3, :height => 88 }).send(method, { :length => 4 }).filters[method].should == { :length => 4, :height => 88 }
+        scope.send(method, { :length => 3, :height => 99 }).filters[:conditions].should == { :length => 3, :height => 99 }
       end
     end
   end
@@ -135,6 +133,20 @@ describe "Supernova::Criteria" do
     
     it "combines multiple without filters" do
       scope.without(:user_id => 1).without(:user_id => 1).without(:user_id => 2).filters[:without].should == { :user_id => [1, 2] }
+    end
+  end
+  
+  describe "#with" do
+    it "accepts string filters" do
+      scope.with("a=1").search_options[:with].should == ["a=1"]
+    end
+    
+    it "also accepts hashes" do
+      scope.with(:a => 1).search_options[:with].should == [{ :a => 1 }]
+    end
+    
+    it "merges various scopes" do
+      scope.with(:a => 1).with("a=b").search_options[:with].should == [{ :a => 1 }, "a=b"]
     end
   end
   
@@ -361,7 +373,7 @@ describe "Supernova::Criteria" do
         a.immutable!
         b = a.except(:order)
         b.search_options[:order].should be_nil
-        b.filters[:with].should == { :a => 1 }
+        b.search_options[:with].should == [{ :a => 1 }]
         a.search_options[:order].should == ["id"]
       end
     end
@@ -430,7 +442,7 @@ describe "Supernova::Criteria" do
     end
     
     it "merges e.g. the with filters" do
-      new_crit.merge(criteria).filters[:with].should == { :c => 8, :a => 1 }
+      new_crit.merge(criteria).search_options[:with].should == [{ :c => 8 }, { :a => 1 }]
     end
     
     it "merges e.g. the conditions filters" do
@@ -488,9 +500,9 @@ describe "Supernova::Criteria" do
         c = a.merge(b)
         c.should_not == a
         c.should_not == b
-        a.filters[:with].should == { :a => 1 }
-        b.filters[:with].should == { :b => 2 }
-        c.filters[:with].should == { :a => 1, :b => 2 }
+        a.search_options[:with].should == [{ :a => 1 }]
+        b.search_options[:with].should == [{ :b => 2 }]
+        c.search_options[:with].should == [{ :a => 1 }, { :b => 2 }]
       end
     end
   end

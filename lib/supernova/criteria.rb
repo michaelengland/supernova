@@ -71,7 +71,7 @@ class Supernova::Criteria
   end
 
   def with(filters)
-    merge_filters :with, filters
+    merge_search_options :with, filters
   end
   
   def where(*args)
@@ -170,7 +170,14 @@ class Supernova::Criteria
   def merge_filters_or_search_options(reference_method, key, value)
     self_or_clone.tap do |soc|
       reference = soc.send(reference_method)
-      if value.is_a?(Hash)
+      if key == :with
+        reference[:with] ||= Array.new
+        if value.is_a?(Array)
+          reference[:with] += value
+        else
+          reference[:with] << value
+        end
+      elsif value.is_a?(Hash)
         reference[key] ||= Hash.new
         reference[key].merge!(value)
       elsif [:select, :order].include?(key)

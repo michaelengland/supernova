@@ -1,7 +1,7 @@
 require 'spec_helper'
 require "ostruct"
 
-describe Supernova::SolrCriteria do
+describe "Supernova::SolrCriteria" do
   let(:criteria) { Supernova::SolrCriteria.new }
   let(:docs) do
     [
@@ -15,21 +15,35 @@ describe Supernova::SolrCriteria do
     }
   end
   
+  describe "#where" do
+    it "sets the correct simple filters" do
+      criteria.where("a_i:10").to_params[:fq].should == ["a_i:10"]
+    end
+    
+    it "combines multiple filters" do
+      criteria.where("a_i:10").where(:a => 1).to_params[:fq].should == ["a_i:10", "a:1"]
+    end
+    
+    it "combines multiple filters with mappings" do
+      criteria.attribute_mapping(:title => { :type => :string }).where(:title => "some_title").to_params[:fq].should == ["title_s:some_title"]
+    end
+  end
+  
   describe "#fq_from_with" do
     it "returns the correct filter for with ranges" do
-      criteria.fq_from_with(:user_id => Range.new(10, 12)).should == ["user_id:[10 TO 12]"]
+      criteria.fq_from_with([:user_id => Range.new(10, 12)]).should == ["user_id:[10 TO 12]"]
     end
     
     it "returns the correct filter for nin" do
-      criteria.fq_from_with(:user_id.nin => [1, 2]).should == ["!(user_id:1 OR user_id:2)"]
+      criteria.fq_from_with([:user_id.nin => [1, 2]]).should == ["!(user_id:1 OR user_id:2)"]
     end
     
     it "returns the correct filter for in" do
-      criteria.fq_from_with(:user_id.in => [1, 2]).should == ["user_id:1 OR user_id:2"]
+      criteria.fq_from_with([:user_id.in => [1, 2]]).should == ["user_id:1 OR user_id:2"]
     end
     
     it "returns the correct filter for not queries" do
-      criteria.fq_from_with(:user_id.not => nil).should == ["user_id:[* TO *]"]
+      criteria.fq_from_with([:user_id.not => nil]).should == ["user_id:[* TO *]"]
     end
   end
   
@@ -110,7 +124,6 @@ describe Supernova::SolrCriteria do
       scope = criteria.attribute_mapping(:title => { :type => :string }, :visits => { :type => :integer })
       scope.order("title asc").order("visits desc").to_params[:sort].should == "title_s asc,visits_i desc"
     end
-    
     
     %w(asc desc).each do |order|
       it "uses a mapped field for order even when #{order} is present" do
@@ -339,7 +352,7 @@ describe Supernova::SolrCriteria do
       criteria.execute
     end
     
-    it "calls replace on collection wit returned docs" do
+    it "calls replace on collection with returned docs" do
       col = double("collection", :original_response= => true, :facets= => true)
       Supernova::Collection.stub!(:new).and_return col
       built_docs = double("built docs")

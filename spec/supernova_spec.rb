@@ -76,7 +76,10 @@ describe Supernova do
       end
       
       it "sets the correct filters" do
-        clazz.for_artists(%w(1 3 2)).filters[:with][:artist_id].should == %w(1 3 2)
+        filters = clazz.for_artists(%w(1 3 2)).to_params[:fq]
+        filters.should include("artist_id:1")
+        filters.should include("artist_id:2")
+        filters.should include("artist_id:3")
       end
       
       it "allows chaining of named_search_scopes" do

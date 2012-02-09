@@ -5,7 +5,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
   def to_params
     solr_options = { :fq => [], :q => "*:*" }
     solr_options[:wt] = search_options[:wt] if search_options[:wt]
-    solr_options[:fq] += fq_from_with(self.filters[:with])
+    solr_options[:fq] += fq_from_with(self.search_options[:with])
     if self.filters[:without]
      self.filters[:without].each do |field, values| 
        solr_options[:fq] += values.map { |value| "!#{solr_field_from_field(field)}:#{value}" }
@@ -67,14 +67,20 @@ class Supernova::SolrCriteria < Supernova::Criteria
     if with.blank?
       []
     else
-      with.map do |key_or_condition, values|
-        values_from_key_or_condition_and_values(key_or_condition, values).map do |value|
-          if key_or_condition.respond_to?(:solr_filter_for)
-            key_or_condition.key = solr_field_from_field(key_or_condition.key)
-            key_or_condition.solr_filter_for(value)
-          else
-            fq_filter_for_key_and_value(solr_field_from_field(key_or_condition), value)
+      with.map do |with_part|
+        if with_part.is_a?(Hash)
+          with_part.map do |key_or_condition, values|
+            values_from_key_or_condition_and_values(key_or_condition, values).map do |value|
+              if key_or_condition.respond_to?(:solr_filter_for)
+                key_or_condition.key = solr_field_from_field(key_or_condition.key)
+                key_or_condition.solr_filter_for(value)
+              else
+                fq_filter_for_key_and_value(solr_field_from_field(key_or_condition), value)
+              end
+            end
           end
+        else
+          with_part
         end
       end.flatten
     end
