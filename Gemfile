@@ -20,6 +20,7 @@ group :development do
   gem "geokit"
   gem "guard"
   gem "rb-fsevent"
+  gem "growl"
   gem "growl_notify"
   gem "autotest"
   gem "autotest-growl"
