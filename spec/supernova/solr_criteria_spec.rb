@@ -203,8 +203,23 @@ describe "Supernova::SolrCriteria" do
       end
     end
     
-    it "allows setting of rows" do
-      criteria.rows(11).to_params[:rows].should == 11
+    describe "setting rows and start" do
+      it "allows setting of rows" do
+        criteria.rows(11).to_params[:rows].should == 11
+      end
+      
+      it "allows setting of start" do
+        criteria.start(16).to_params[:start].should == 16
+      end
+      
+      it "overwrites pagination with rows" do
+        criteria.paginate(:per_page => 9, :page => 1).rows(11).to_params[:rows].should == 11
+      end
+      
+      it "overwrites pagination with start" do
+        criteria.paginate(:per_page => 9, :page => 1).start(100).rows(11).to_params[:start].should == 100
+      end
+      
     end
     
     describe "pagination" do

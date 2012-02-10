@@ -112,16 +112,12 @@ describe "Supernova::Criteria" do
     scope.paginate(:page => 9, :per_page => 2).search_options[:pagination].should == { :page => 9, :per_page => 2 }
   end
   
-  it "sets per_page to number of rows when rows specified" do
-    scope.rows(0).search_options[:pagination].should == { :per_page => 0 }
-  end
-  
   describe "#per_page" do
     it "allows setting of pagination to 0" do
       scope.paginate(:per_page => 0).per_page.should == 0
     end
     
-    it "" do
+    it "sets the per_page to the default when setting to nil" do
       scope.paginate(:per_page => nil).per_page.should == 25
     end
   end
@@ -431,6 +427,14 @@ describe "Supernova::Criteria" do
       mapping = { :title => { :type => :integer } }
       scope.attribute_mapping(mapping).search_options[:attribute_mapping].should == mapping
     end
+  end
+  
+  it "allows setting the rows attributes" do
+    scope.rows(11).search_options[:rows].should == 11
+  end
+  
+  it "allows setting the start attributes" do
+    scope.start(99).search_options[:start].should == 99
   end
   
   describe "#merge" do

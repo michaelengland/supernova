@@ -104,8 +104,12 @@ class Supernova::Criteria
     merge_search_options :pagination, pagination_options
   end
   
-  def rows(number)
-    merge_search_options :pagination, :per_page => number
+  def rows(rows)
+    merge_search_options :rows, rows
+  end
+  
+  def start(start)
+    merge_search_options :start, start
   end
   
   def near(*coordinates)

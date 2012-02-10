@@ -33,9 +33,9 @@ class Supernova::SolrCriteria < Supernova::Criteria
       solr_options["facet.field"] = self.search_options[:facets].compact.map { |field| solr_field_from_field(field) }
     end
     
-    if self.search_options[:pagination]
-      solr_options[:rows] = per_page
-      solr_options[:start] = (current_page - 1) * solr_options[:rows]
+    if self.search_options[:pagination] || search_options[:rows] || search_options[:start]
+      solr_options[:rows] = self.search_options[:rows] || per_page
+      solr_options[:start] = search_options[:start] || ((current_page - 1) * solr_options[:rows])
     end
     solr_options
   end
