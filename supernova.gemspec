@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "supernova"
-  s.version = "0.7.1"
+  s.version = "0.7.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Tobias Schwab"]
@@ -81,6 +81,7 @@ Gem::Specification.new do |s|
     "spec/database.sql",
     "spec/integration/solr_spec.rb",
     "spec/spec_helper.rb",
+    "spec/supernova/collection_spec.rb",
     "spec/supernova/condition_spec.rb",
     "spec/supernova/criteria_spec.rb",
     "spec/supernova/numeric_extensions_spec.rb",
