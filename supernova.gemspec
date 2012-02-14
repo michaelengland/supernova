@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "supernova"
-  s.version = "0.7.0"
+  s.version = "0.7.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Tobias Schwab"]
-  s.date = "2012-02-09"
+  s.date = "2012-02-14"
   s.description = "Unified search scopes"
   s.email = "tobias.schwab@dynport.de"
   s.executables = ["start_solr"]
@@ -113,6 +113,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency(%q<geokit>, [">= 0"])
       s.add_development_dependency(%q<guard>, [">= 0"])
       s.add_development_dependency(%q<rb-fsevent>, [">= 0"])
+      s.add_development_dependency(%q<growl>, [">= 0"])
       s.add_development_dependency(%q<growl_notify>, [">= 0"])
       s.add_development_dependency(%q<autotest>, [">= 0"])
       s.add_development_dependency(%q<autotest-growl>, [">= 0"])
@@ -133,6 +134,7 @@ Gem::Specification.new do |s|
       s.add_dependency(%q<geokit>, [">= 0"])
       s.add_dependency(%q<guard>, [">= 0"])
       s.add_dependency(%q<rb-fsevent>, [">= 0"])
+      s.add_dependency(%q<growl>, [">= 0"])
       s.add_dependency(%q<growl_notify>, [">= 0"])
       s.add_dependency(%q<autotest>, [">= 0"])
       s.add_dependency(%q<autotest-growl>, [">= 0"])
@@ -154,6 +156,7 @@ Gem::Specification.new do |s|
     s.add_dependency(%q<geokit>, [">= 0"])
     s.add_dependency(%q<guard>, [">= 0"])
     s.add_dependency(%q<rb-fsevent>, [">= 0"])
+    s.add_dependency(%q<growl>, [">= 0"])
     s.add_dependency(%q<growl_notify>, [">= 0"])
     s.add_dependency(%q<autotest>, [">= 0"])
     s.add_dependency(%q<autotest-growl>, [">= 0"])
