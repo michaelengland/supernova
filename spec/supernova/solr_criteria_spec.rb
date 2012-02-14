@@ -152,14 +152,29 @@ describe "Supernova::SolrCriteria" do
       criteria.select(:user_id).select(:user_id).select(:enabled).to_params[:fl].should == "user_id,enabled,id"
     end
     
-    it "sets the correct facet options when set" do
-      params = criteria.facet_fields(:name).to_params
-      params[:facet].should == true
+    describe "with facet fields" do
+      it "sets the correct facet options when set" do
+        params = criteria.facet_fields(:name).to_params
+        params[:facet].should == true
+      end
+    
+      it "sets all facet fields" do
+        params = criteria.facet_fields(:name).facet_fields(:title).to_params
+        params["facet.field"].should == ["name", "title"]
+      end
     end
     
-    it "sets all facet fields" do
-      params = criteria.facet_fields(:name).facet_fields(:title).to_params
-      params["facet.field"].should == ["name", "title"]
+    describe "with facet queries", :wip => true do
+      let(:params) { criteria.facet_queries(:a => "a", :b => "b").to_params }
+      
+      it "sets :facet to true" do
+        params[:facet].should == true
+      end
+      
+      it "sets the correct facet query field" do
+        criteria.facet_queries(:a => "a", :b => "b")
+        params["facet.query"].should == ["a", "b"]
+      end
     end
     
     it "uses mapped fields for select" do
@@ -219,7 +234,6 @@ describe "Supernova::SolrCriteria" do
       it "overwrites pagination with start" do
         criteria.paginate(:per_page => 9, :page => 1).start(100).rows(11).to_params[:start].should == 100
       end
-      
     end
     
     describe "pagination" do

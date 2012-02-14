@@ -95,6 +95,10 @@ class Supernova::Criteria
   def facet_fields(*fields)
     merge_filters_array :facets, fields
   end
+  
+  def facet_queries(hash)
+    merge_search_options :facet_queries, hash
+  end
 
   def conditions(filters)
     merge_filters :conditions, filters

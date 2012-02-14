@@ -28,9 +28,13 @@ class Supernova::SolrCriteria < Supernova::Criteria
     end
     solr_options[:fq] << "type:#{self.clazz}" if self.clazz
     
+    solr_options[:facet] = true if include_facets?
     if self.search_options[:facets]
-      solr_options[:facet] = true
       solr_options["facet.field"] = self.search_options[:facets].compact.map { |field| solr_field_from_field(field) }
+    end
+    
+    if self.search_options[:facet_queries]
+      solr_options["facet.query"] = self.search_options[:facet_queries].values
     end
     
     if self.search_options[:pagination] || search_options[:rows] || search_options[:start]
@@ -38,6 +42,10 @@ class Supernova::SolrCriteria < Supernova::Criteria
       solr_options[:start] = search_options[:start] || ((current_page - 1) * solr_options[:rows])
     end
     solr_options
+  end
+  
+  def include_facets?
+    self.search_options[:facets] || self.search_options[:facet_queries]
   end
   
   def convert_search_order(order)

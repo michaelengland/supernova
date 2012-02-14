@@ -437,6 +437,23 @@ describe "Supernova::Criteria" do
     scope.start(99).search_options[:start].should == 99
   end
   
+  describe "#facet_queries" do
+    it "adds the queries to the facet_queries array" do
+      scope.facet_queries(:first => "1 = 1").facet_queries(:second => "2 = 2").search_options[:facet_queries].should == {
+        :first => "1 = 1", :second => "2 = 2"
+      }
+    end
+    
+    it "allows merging of two scopes with facet queries" do
+      scope.immutable!
+      a = scope.facet_queries(:first => "1 = 1")
+      b = scope.facet_queries(:second => "2 = 2")
+      a.search_options[:facet_queries].should == { :first => "1 = 1" }
+      b.search_options[:facet_queries].should == { :second => "2 = 2" }
+      a.merge(b).search_options[:facet_queries].should == { :first => "1 = 1", :second => "2 = 2" }
+    end
+  end
+  
   describe "#merge" do
     let(:criteria) { Supernova::Criteria.new.order("popularity asc").with(:a => 1).conditions(:b => 2).search("New Search") }
     let(:new_crit) { Supernova::Criteria.new.order("popularity desc").with(:c => 8).conditions(:e => 9).search("Search") }
