@@ -261,12 +261,25 @@ describe "Solr" do
   
   describe "#facets" do
     it "returns the correct facets hash" do
-      # pending "fix me"
       Supernova::Solr.add(:id => "offers/3", :type => "Offer", :user_id_i => 3, :enabled_b => false, 
         :text_t => "Hans Müller", :popularity_i => 10, :type => "Offer"
       )
       Supernova::Solr.commit!
       new_criteria.facet_fields(:text_t).execute.facets.should == {"text_t"=>{"mintal"=>1, "marek"=>1, "meyer"=>1, "müller"=>1, "han"=>2}}
+    end
+  end
+  
+  describe "#facet_queries" do
+    it "returns the correct result" do
+      defaults = {
+        
+      }
+      Supernova::Solr.add(:id => "offers/1", :type => "Offer", :popularity_i => 1)
+      Supernova::Solr.add(:id => "offers/2", :type => "Offer", :popularity_i => 10)
+      Supernova::Solr.add(:id => "offers/3", :type => "Offer", :popularity_i => 100)
+      Supernova::Solr.commit!
+      col = new_criteria.facet_queries(:one => "popularity_i:[* TO 1]", :ten => "popularity_i:[* TO 10]", :hundred => "popularity_i:[* TO 100]").execute
+      col.facet_queries.should == { :one => 1, :ten => 2, :hundred => 3 }
     end
   end
   
@@ -305,7 +318,9 @@ describe "Solr" do
   
   describe "with mapping" do
     before(:each) do
-      @clazz = Class.new(Supernova::SolrIndexer)
+      name = "Class#{Time.now.to_f.to_s.gsub(".", "")}"
+      eval("class #{name} < Supernova::SolrIndexer; end")
+      @clazz = name.constantize
       @clazz.has :location, :type => :string
       @clazz.has :city, :type => :string
     end

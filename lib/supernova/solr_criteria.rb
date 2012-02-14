@@ -192,6 +192,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
   def execute
     response = execute_raw
     collection = Supernova::Collection.new(current_page, per_page == 0 ? 1 : per_page, response["response"]["numFound"])
+    collection.original_criteria = self.clone
     collection.original_response = response
     collection.facets = hashify_facets_from_response(response)
     collection.replace(build_docs(response["response"]["docs"]))

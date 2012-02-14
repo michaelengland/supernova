@@ -382,7 +382,7 @@ describe "Supernova::SolrCriteria" do
     end
     
     it "calls replace on collection with returned docs" do
-      col = double("collection", :original_response= => true, :facets= => true)
+      col = Supernova::Collection.new(1, 1, 10)
       Supernova::Collection.stub!(:new).and_return col
       built_docs = double("built docs")
       criteria.stub!(:build_docs).and_return built_docs
