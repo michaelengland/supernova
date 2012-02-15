@@ -174,16 +174,22 @@ class Supernova::Criteria
       soc.search_options.delete(key)
     end
   end
+  
+  def valid_with_filter?(value)
+    !(value.respond_to?(:blank?) && value.blank?) && !(value.respond_to?(:empty?) && value.empty?)
+  end
 
   def merge_filters_or_search_options(reference_method, key, value)
     self_or_clone.tap do |soc|
       reference = soc.send(reference_method)
       if key == :with
         reference[:with] ||= Array.new
-        if value.is_a?(Array)
-          reference[:with] += value
-        else
-          reference[:with] << value
+        if valid_with_filter?(value)
+          if value.is_a?(Array)
+            reference[:with] += value
+          else 
+            reference[:with] << value
+          end
         end
       elsif value.is_a?(Hash)
         reference[key] ||= Hash.new

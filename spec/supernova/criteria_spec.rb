@@ -420,6 +420,18 @@ describe "Supernova::Criteria" do
       scope.should_receive(:with).with(:a => 9).and_return ret
       scope.where(:a => 9).should == ret
     end
+    
+    it "does not add empty hashes" do
+      scope.where({}).search_options[:with].should be_empty
+    end
+    
+    it "does not add nil values" do
+      scope.where(nil).search_options[:with].should be_empty
+    end
+    
+    it "does not add blanks" do
+      scope.where("  ").search_options[:with].should be_empty
+    end
   end
   
   describe "#attribute_mapping" do
