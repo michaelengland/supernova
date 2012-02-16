@@ -284,21 +284,27 @@ describe "Supernova::SolrCriteria" do
   end
   
   describe "#ids" do
+    let(:response) { Supernova::Collection.new(1, 1, 100) }
+    
+    before(:each) do
+      response.original_response = facet_response
+    end
+    
     it "sets the select fields to id only" do
       scope = double("scope")
       criteria.should_receive(:only_ids).and_return(scope)
-      scope.should_receive(:execute).and_return([])
-      criteria.ids.should == []
+      scope.should_receive(:execute).and_return(response)
+      criteria.ids.should == [1, 2]
     end
     
     it "calls execute" do
-      criteria.should_receive(:execute).and_return([])
+      criteria.should_receive(:execute).and_return(response)
       criteria.ids
     end
     
     it "maps the id hashes to ids" do
-      criteria.stub(:execute).and_return([ { "id" => "offer/1" }, { "id" => "offer/3" } ])
-      criteria.ids.should == [1, 3]
+      criteria.stub(:execute).and_return(response)
+      criteria.ids.should == [1, 2]
     end
   end
   
@@ -325,17 +331,14 @@ describe "Supernova::SolrCriteria" do
       a = criteria.select("name_s").only_ids
       a.to_params[:fl].should == "id"
     end
-    
-    # it "does something" do
-    #   
-    # end
   end
 
   describe "#execute" do
     let(:params) { {} }
+    let(:response) { double("response", :body => solr_response.to_json) }
     
     before(:each) do
-      criteria.stub(:execute_raw).and_return(solr_response)
+      criteria.stub(:typhoeus_response).and_return(response)
       criteria.stub(:to_params).and_return params
     end
     
@@ -344,7 +347,7 @@ describe "Supernova::SolrCriteria" do
     end
     
     it "calls to_params" do
-      criteria.should_receive(:execute_raw).and_return solr_response
+      criteria.should_receive(:typhoeus_response).and_return response
       criteria.execute
     end
     
@@ -391,7 +394,7 @@ describe "Supernova::SolrCriteria" do
     end
     
     it "sets the correct facets" do
-      criteria.stub!(:execute_raw).and_return(facet_response)
+      response.stub!(:body).and_return(facet_response.to_json)
       criteria.should_receive(:hashify_facets_from_response).with(facet_response).and_return({ :a => 1 })
       criteria.execute.facets.should == {:a => 1}
     end
@@ -408,10 +411,36 @@ describe "Supernova::SolrCriteria" do
     end
   end
   
+  describe "#execute_async" do
+    let(:request) { double("request") }
+    let(:response) { double("response", :body => solr_response.to_json) }
+    let(:hydra) { double("hydra", :queue => nil) }
+    
+    before(:each) do
+      request.should_receive(:on_complete).and_yield(response)
+      criteria.stub!(:typhoeus_request).and_return(request)
+      criteria.stub!(:hydra).and_return(hydra)
+    end
+    
+    it "yields the parsed collection" do
+      criteria.execute_async do |collection|
+        @collection = collection
+      end
+      @collection.should be_kind_of(Supernova::Collection)
+    end
+    
+    it "adds the request to hydra" do
+      hydra.should_receive(:queue).with(request)
+      criteria.execute_async do |collection|
+        collection
+      end
+    end
+  end
+  
   it "returns the parsed response body" do
-    response = double("response", :body => %({"a": 1}))
+    response = double("response", :body => facet_response.to_json)
     criteria.stub!(:typhoeus_response).and_return(response)
-    criteria.execute_raw.should == { "a" => 1 }
+    criteria.execute.original_response.should == facet_response
   end
   
   describe "#typhoeus_request" do

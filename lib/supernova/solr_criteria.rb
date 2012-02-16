@@ -185,15 +185,15 @@ class Supernova::SolrCriteria < Supernova::Criteria
     end
   end
   
-  def execute_raw
-    JSON.parse(typhoeus_response.body)
-  end
-  
   def typhoeus_response
     request = typhoeus_request
-    Typhoeus::Hydra.hydra.queue(request)
-    Typhoeus::Hydra.hydra.run
+    hydra.queue(request)
+    hydra.run
     request.response
+  end
+  
+  def hydra
+    Typhoeus::Hydra.hydra
   end
   
   def typhoeus_request
@@ -201,7 +201,11 @@ class Supernova::SolrCriteria < Supernova::Criteria
   end
   
   def execute
-    collection_from_json(execute_raw)
+    collection_from_body(typhoeus_response.body)
+  end
+  
+  def collection_from_body(body)
+    collection_from_json(JSON.parse(body))
   end
   
   def collection_from_json(json)
@@ -213,13 +217,19 @@ class Supernova::SolrCriteria < Supernova::Criteria
     collection
   end
   
+  def execute_async(&block)
+    request = typhoeus_request
+    request.on_complete do |response|
+      block.call(collection_from_body(response.body))
+    end
+    hydra.queue(request)
+  end
+  
   def only_ids
     self_or_clone.except(:select).select("id")
   end
   
   def ids
-    only_ids.execute.tap do |col|
-      col.replace(col.map { |h| h["id"].split("/").last.to_i })
-    end
+    only_ids.execute.ids
   end
 end

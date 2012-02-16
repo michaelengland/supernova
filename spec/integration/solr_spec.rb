@@ -269,11 +269,25 @@ describe "Solr" do
     end
   end
   
+  describe "#execute_async" do
+    it "is working" do
+      Supernova::Solr.add(:id => "offers/1", :type => "Offer", :popularity_i => 1)
+      Supernova::Solr.add(:id => "offers/2", :type => "Offer", :popularity_i => 10)
+      Supernova::Solr.add(:id => "offers/3", :type => "Offer", :popularity_i => 100)
+      Supernova::Solr.commit!
+      
+      new_criteria.select("id").execute_async do |collection|
+        @collection = collection
+      end
+      new_criteria.hydra.run
+      @collection.should be_kind_of(Supernova::Collection)
+      @collection.count.should == 3
+      @collection.should == [{ "id" => "offers/1" }, { "id" => "offers/2" }, { "id" => "offers/3" }]
+    end
+  end
+  
   describe "#facet_queries" do
     it "returns the correct result" do
-      defaults = {
-        
-      }
       Supernova::Solr.add(:id => "offers/1", :type => "Offer", :popularity_i => 1)
       Supernova::Solr.add(:id => "offers/2", :type => "Offer", :popularity_i => 10)
       Supernova::Solr.add(:id => "offers/3", :type => "Offer", :popularity_i => 100)
@@ -283,17 +297,19 @@ describe "Solr" do
     end
   end
   
-  describe "#execute_raw" do
+  describe "#typhoeus_response" do
+    let(:response) { JSON.parse(new_criteria.typhoeus_response.body) }
+    
     it "returns a hash" do
-      new_criteria.execute_raw.should be_kind_of(Hash)
+      response.should be_kind_of(Hash)
     end
     
     it "should not be empty" do
-      new_criteria.execute_raw.keys.should_not be_empty
+      response.keys.should_not be_empty
     end
     
     it "includes th ecorrect headers" do
-      new_criteria.execute_raw.keys.sort.should == %w(responseHeader response).sort
+      response.keys.sort.should == %w(responseHeader response).sort
     end
   end
   

@@ -21,4 +21,14 @@ class Supernova::Collection < WillPaginate::Collection
   def original_facet_queries
     original_criteria.search_options[:facet_queries] || {}
   end
+  
+  def ids
+    @ids ||= extract_ids_from_solr_hash(original_response)
+  end
+  
+  def extract_ids_from_solr_hash(solr_hash)
+    col = self.dup
+    col.replace(solr_hash["response"]["docs"].map { |hash| hash["id"][/(\d+)$/, 1].to_i })
+    col
+  end
 end
