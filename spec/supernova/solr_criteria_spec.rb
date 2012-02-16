@@ -164,7 +164,7 @@ describe "Supernova::SolrCriteria" do
       end
     end
     
-    describe "with facet queries", :wip => true do
+    describe "with facet queries" do
       let(:params) { criteria.facet_queries(:a => "a", :b => "b").to_params }
       
       it "sets :facet to true" do
@@ -394,6 +394,43 @@ describe "Supernova::SolrCriteria" do
       criteria.stub!(:execute_raw).and_return(facet_response)
       criteria.should_receive(:hashify_facets_from_response).with(facet_response).and_return({ :a => 1 })
       criteria.execute.facets.should == {:a => 1}
+    end
+  end
+  
+  describe "#typhoeus_response" do
+    it "returns the response" do
+      response = double("response")
+      request = double("request", :response => response)
+      Typhoeus::Hydra.hydra.should_receive(:queue).with(request)
+      Typhoeus::Hydra.hydra.should_receive(:run)
+      criteria.stub!(:typhoeus_request).and_return(request)
+      criteria.typhoeus_response.should == response
+    end
+  end
+  
+  it "returns the parsed response body" do
+    response = double("response", :body => %({"a": 1}))
+    criteria.stub!(:typhoeus_response).and_return(response)
+    criteria.execute_raw.should == { "a" => 1 }
+  end
+  
+  describe "#typhoeus_request" do
+    it "returns a Typhoeus::Request" do
+      criteria.typhoeus_request.should be_kind_of(Typhoeus::Request)
+    end
+    
+    it "sets the correct url" do
+      Supernova::Solr.stub(:select_url).and_return("my_select_url")
+      criteria.typhoeus_request.url.should == "my_select_url"
+    end
+    
+    it "returns the correct params" do
+      criteria.stub(:to_params).and_return(:a => 1)
+      criteria.typhoeus_request.params.should == { :a => 1, :wt => "json"}
+    end
+    
+    it "returns the correct request methods" do
+      criteria.typhoeus_request.method.should == :post
     end
   end
   

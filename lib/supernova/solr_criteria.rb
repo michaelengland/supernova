@@ -186,16 +186,30 @@ class Supernova::SolrCriteria < Supernova::Criteria
   end
   
   def execute_raw
-    JSON.parse(Typhoeus::Request.post(Supernova::Solr.select_url, :params => to_params.merge(:wt => "json")).body)
+    JSON.parse(typhoeus_response.body)
+  end
+  
+  def typhoeus_response
+    request = typhoeus_request
+    Typhoeus::Hydra.hydra.queue(request)
+    Typhoeus::Hydra.hydra.run
+    request.response
+  end
+  
+  def typhoeus_request
+    Typhoeus::Request.new(Supernova::Solr.select_url, :params => to_params.merge(:wt => "json"), :method => :post)
   end
   
   def execute
-    response = execute_raw
-    collection = Supernova::Collection.new(current_page, per_page == 0 ? 1 : per_page, response["response"]["numFound"])
+    collection_from_json(execute_raw)
+  end
+  
+  def collection_from_json(json)
+    collection = Supernova::Collection.new(current_page, per_page == 0 ? 1 : per_page, json["response"]["numFound"])
     collection.original_criteria = self.clone
-    collection.original_response = response
-    collection.facets = hashify_facets_from_response(response)
-    collection.replace(build_docs(response["response"]["docs"]))
+    collection.original_response = json
+    collection.facets = hashify_facets_from_response(json)
+    collection.replace(build_docs(json["response"]["docs"]))
     collection
   end
   
