@@ -42,7 +42,32 @@ describe "Supernova::Condition" do
     end
   end
   
-  describe "solr_filter_for" do
+  describe "#or_key_and_value", :wip => true do
+    it "returns the correct filter" do
+      ne = double("ne", :lat => 48.0, :lng => 12.0)
+      sw = double("sw", :lat => 47.0, :lng => 11.0)
+      bounding_box = double("bbox", :ne => ne, :sw => sw)
+      :pt.in.or_key_and_value(bounding_box).should == "pt:[47.0,11.0 TO 48.0,12.0]"
+    end
+    
+    it "returns the correct filter" do
+      ne = double("ne", :lat => 48.0, :lng => 12.0)
+      sw = double("sw", :lat => 47.0, :lng => 11.0)
+      bounding_box = double("bbox", :ne => ne, :sw => sw)
+      :pt.inside.or_key_and_value(bounding_box).should == "pt:{47.0,11.0 TO 48.0,12.0}"
+    end
+    
+  end
+  
+  describe "solr_filter_for", :wip => true do
+    it "returns the correct filter" do
+      sw = Geokit::LatLng.new(47.1, 11.1)
+      ne = Geokit::LatLng.new(48.2, 12.2)
+      bounds = Geokit::Bounds.new(sw, ne)
+      :location_p.inside.solr_filter_for(bounds).should == "location_p:{47.1,11.1 TO 48.2,12.2}"
+    end
+    
+    
     it "returns the correct filter for numbers" do
       :user_id.not.solr_filter_for(7).should == "!user_id:7"
     end

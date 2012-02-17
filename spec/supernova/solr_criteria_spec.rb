@@ -194,6 +194,15 @@ describe "Supernova::SolrCriteria" do
       criteria.attribute_mapping(:user_id => { :type => :integer }).without(:user_id => 1).to_params[:fq].should == ["!user_id_i:1"]
     end
     
+    describe "bounding box search" do
+      it "includes the correct filter" do
+        ne = double("ne", :lat => 48.0, :lng => 12.0)
+        sw = double("sw", :lat => 47.0, :lng => 11.0)
+        bounding_box = double("bbox", :ne => ne, :sw => sw)
+        criteria.where(:pt.in => bounding_box).to_params[:fq].should include("pt:[47.0,11.0 TO 48.0,12.0]")
+      end
+    end
+    
     describe "with a nearby search" do
       let(:nearby_criteria) { Supernova::SolrCriteria.new.near(47, 11).within(10.kms) }
       

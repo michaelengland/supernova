@@ -36,7 +36,7 @@ class Supernova::Condition
         "#{key}:[* TO #{value}]"
       when :nin
         value.is_a?(Range) ? "#{key}:{* TO #{value.first}} OR #{key}:{#{value.last} TO *}" : "!(#{or_key_and_value(value)})"
-      when :in
+      when :in, :inside
         or_key_and_value(value)
     end
   end
@@ -48,6 +48,8 @@ class Supernova::Condition
   def or_key_and_value(values)
     if values.is_a?(Range)
       "#{key}:[#{values.first} TO #{values.last}]"
+    elsif values.respond_to?(:ne) && values.respond_to?(:sw)
+      "#{key}:#{type == :inside ? "{" : "["}#{values.sw.lat},#{values.sw.lng} TO #{values.ne.lat},#{values.ne.lng}#{type == :inside ? "}" : "]"}"
     else
       values.map { |v| v.nil? ? "!#{nil_filter}" : "#{key}:#{v}"}.join(" OR ")
     end

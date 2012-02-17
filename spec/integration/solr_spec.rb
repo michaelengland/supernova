@@ -173,6 +173,66 @@ describe "Solr" do
       end
     end
     
+    describe "bounding box search" do
+      class Coordinate
+        attr_accessor :lat, :lng
+        
+        def initialize(attributes = {})
+          attributes.each do |key, value|
+            self.send(:"#{key}=", value)
+          end
+        end
+        
+        def to_s
+          "#{lat},#{lng}"
+        end
+      end
+      
+      class BoundingBox
+        attr_accessor :ne, :sw
+        
+        def initialize(attributes = {})
+          attributes.each do |key, value|
+            self.send(:"#{key}=", value)
+          end
+        end
+      end
+      
+      let(:inside) { GeoKit::LatLng.new(9.990317, 53.556698) }
+      let(:outside) { GeoKit::LatLng.new(9.987238, 53.555950) }
+      
+      let(:sw_lat) { 9.988139 }
+      let(:sw_lng) { 53.556068 }
+      let(:sw) { c = GeoKit::LatLng.new(sw_lat, sw_lng) }
+      
+      let(:ne_lat) { 9.992849 }
+      let(:ne_lng) { 53.557522 }
+      let(:ne) { GeoKit::LatLng.new(ne_lat, ne_lng) }
+      
+      let(:bounding_box) { GeoKit::Bounds.new(sw, ne) }
+      
+      
+      before(:each) do
+        Supernova::Solr.truncate!
+        Supernova::Solr.add(:id => "1", :location_p => inside.to_s, :type => "Test")
+        Supernova::Solr.add(:id => "2", :location_p => outside.to_s, :type => "Test")
+        Supernova::Solr.commit!
+      end
+      
+      it "the correct entries" do
+        scope = Supernova::SolrCriteria.new.with(:location_p.in => bounding_box)
+        scope.ids.should == [1]
+      end
+      
+      it "includes the egdes" do
+        Supernova::SolrCriteria.new.with(:location_p.in => GeoKit::Bounds.new(outside, inside)).ids.should == [1, 2]
+      end
+      
+      it "includes the egdes", :wip => true do
+        Supernova::SolrCriteria.new.with(:location_p.inside => GeoKit::Bounds.new(outside, inside)).ids.should == []
+      end
+    end
+    
     describe "range search" do
       { Range.new(2, 3) => [2], Range.new(3, 10) => [], Range.new(1, 2) => [1, 2] }.each do |range, ids|
         it "returns #{ids.inspect} for range #{range.inspect}" do
