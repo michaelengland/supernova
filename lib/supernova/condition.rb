@@ -6,6 +6,14 @@ class Supernova::Condition
     self.type = type
   end
   
+  def ==(other)
+    key == other.key && type == other.type
+  end
+  
+  def eql?(other)
+    self == other
+  end
+  
   def solr_filter_for(value)
     case type
       when :not, :ne

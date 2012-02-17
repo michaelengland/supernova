@@ -7,6 +7,32 @@ describe "Supernova::Condition" do
     cond.type.should == :not
   end
   
+  describe "equality" do
+    it "returns true when the same" do
+      :user_id.not.should == :user_id.not
+    end
+    
+    it "returns false when other key" do
+      :user_id.not.should_not == :other_user_id.not
+    end
+    
+    it "returns false when other method" do
+      :user_id.in.should_not == :user_id.not
+    end
+    
+    it "returns true when the same" do
+      :user_id.not.should be_eql(:user_id.not)
+    end
+    
+    it "returns false when other key" do
+      :user_id.not.should_not be_eql(:other_user_id.not)
+    end
+    
+    it "returns false when other method" do
+      :user_id.in.should_not be_eql(:user_id.not)
+    end
+  end
+  
   describe "solr_filter_for" do
     it "returns the correct filter for numbers" do
       :user_id.not.solr_filter_for(7).should == "!user_id:7"
