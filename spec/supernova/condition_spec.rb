@@ -31,6 +31,15 @@ describe "Supernova::Condition" do
     it "returns false when other method" do
       :user_id.in.should_not be_eql(:user_id.not)
     end
+    
+    it "works for hashes" do
+      a = { :user_id.in => 1 }
+      a[:user_id.in] = 2
+      a.keys.length.should == 1
+      a[:user_id.in].should == 2
+      a[:user_id.not] = 2
+      a.keys.length.should == 2
+    end
   end
   
   describe "solr_filter_for" do

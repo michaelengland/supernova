@@ -7,11 +7,15 @@ class Supernova::Condition
   end
   
   def ==(other)
-    key == other.key && type == other.type
+    self.hash == other.hash
   end
   
   def eql?(other)
     self == other
+  end
+  
+  def hash
+    [type, key].hash
   end
   
   def solr_filter_for(value)
