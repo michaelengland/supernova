@@ -197,7 +197,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
   end
   
   def typhoeus_request
-    Typhoeus::Request.new(Supernova::Solr.select_url, :params => to_params.merge(:wt => "json"), :method => :post)
+    Typhoeus::Request.new(Supernova::Solr.select_url, :params => to_params.merge(:wt => "json"), :method => :get)
   end
   
   def execute

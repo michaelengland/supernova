@@ -459,7 +459,7 @@ describe "Supernova::SolrCriteria" do
     
     it "sets the correct url" do
       Supernova::Solr.stub(:select_url).and_return("my_select_url")
-      criteria.typhoeus_request.url.should == "my_select_url"
+      criteria.typhoeus_request.url.should == "my_select_url?q=%2A%3A%2A&wt=json"
     end
     
     it "returns the correct params" do
@@ -468,7 +468,7 @@ describe "Supernova::SolrCriteria" do
     end
     
     it "returns the correct request methods" do
-      criteria.typhoeus_request.method.should == :post
+      criteria.typhoeus_request.method.should == :get
     end
   end
   
