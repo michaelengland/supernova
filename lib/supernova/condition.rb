@@ -50,6 +50,8 @@ class Supernova::Condition
       "#{key}:[#{values.first} TO #{values.last}]"
     elsif values.respond_to?(:ne) && values.respond_to?(:sw)
       "#{key}:#{type == :inside ? "{" : "["}#{values.sw.lat},#{values.sw.lng} TO #{values.ne.lat},#{values.ne.lng}#{type == :inside ? "}" : "]"}"
+    elsif values.is_a?(Supernova::Circle)
+      "{!geofilt}"
     else
       values.map { |v| v.nil? ? "!#{nil_filter}" : "#{key}:#{v}"}.join(" OR ")
     end

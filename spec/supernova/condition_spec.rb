@@ -57,6 +57,12 @@ describe "Supernova::Condition" do
       :pt.inside.or_key_and_value(bounding_box).should == "pt:{47.0,11.0 TO 48.0,12.0}"
     end
     
+    it "returns {!geofilt} when center" do
+      center = Supernova::Coordinate.new(:lat => 47, :lng => 11)
+      circle = Supernova::Circle.new(:center => center, :radius_in_meters => 10)
+      :center.in.or_key_and_value(circle).should == "{!geofilt}"
+    end
+    
   end
   
   describe "solr_filter_for", :wip => true do

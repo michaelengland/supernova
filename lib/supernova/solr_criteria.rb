@@ -1,6 +1,44 @@
 # -*- encoding : utf-8 -*-
 
 class Supernova::SolrCriteria < Supernova::Criteria
+  def geo_circle_from_with
+    geo_filter_in_with.at(1) if geo_filter_in_with
+  end
+  
+  def geo_center_from_with
+    geo_circle_from_with.center if geo_circle_from_with
+  end
+  
+  def geo_distance_in_meters_from_with
+    geo_circle_from_with.radius_in_meters if geo_circle_from_with
+  end
+  
+  def geo_distance_in_meters
+    self.search_options[:geo_distance] || geo_distance_in_meters_from_with
+  end
+  
+  def geo_center
+    if hash = self.search_options[:geo_center]
+      Supernova::Coordinate.new(hash)
+    else
+      geo_center_from_with
+    end
+  end
+  
+  def geo_filed_key
+    geo_filter_in_with ? geo_filter_in_with.first : :location
+  end
+  
+  def geo_attributes_from_center_distance_in_meters_and_key(center, distance_in_meters, key)
+    if center && distance_in_meters
+      {
+        :pt => "#{center.lat},#{center.lng}",
+        :d => (distance_in_meters.to_f / Supernova::KM_TO_METER),
+        :sfield => solr_field_from_field(key)
+      }
+    end
+  end
+  
   # move this into separate methods (test each separatly)
   def to_params
     solr_options = { :fq => [], :q => "*:*" }
@@ -16,12 +54,11 @@ class Supernova::SolrCriteria < Supernova::Criteria
       solr_options[:q] = self.search_options[:search].map { |query| "(#{query})" }.join(" AND ")
     end
     
-    if self.search_options[:geo_center] && self.search_options[:geo_distance]
-      solr_options[:pt] = "#{self.search_options[:geo_center][:lat]},#{self.search_options[:geo_center][:lng]}"
-      solr_options[:d] = self.search_options[:geo_distance].to_f / Supernova::KM_TO_METER
-      solr_options[:sfield] = solr_field_from_field(:location)
+    if geo_options = geo_attributes_from_center_distance_in_meters_and_key(geo_center, geo_distance_in_meters, geo_filed_key)
+      solr_options.merge!(geo_options)
       solr_options[:fq] << "{!geofilt}"
     end
+    
     if self.search_options[:select]
       self.search_options[:select] << "id" if !self.search_options[:select].map(&:to_s).include?("id")
       solr_options[:fl] = self.search_options[:select].compact.map { |field| solr_field_from_field(field) }.join(",") 
@@ -42,6 +79,17 @@ class Supernova::SolrCriteria < Supernova::Criteria
       solr_options[:start] = search_options[:start] || ((current_page - 1) * solr_options[:rows])
     end
     solr_options
+  end
+  
+  def geo_filter_in_with
+    (search_options[:with] || []).each do |option|
+      if option.is_a?(Hash)
+        option.each do |condition, value|
+          return [condition.key, value] if value.is_a?(Supernova::Circle)
+        end
+      end
+    end
+    nil
   end
   
   def include_facets?
