@@ -19,6 +19,8 @@ group :development do
   gem "ZenTest", "4.5.0"
   gem "geokit"
   gem "guard"
+  gem "guard-bundler"
+  gem "guard-rspec"
   gem "rb-fsevent"
   gem "growl"
   gem "growl_notify"
