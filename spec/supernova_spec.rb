@@ -1,4 +1,4 @@
-require 'spec_helper'
+require 'spec_helper_ar'
 
 describe Supernova do
   let(:clazz) do

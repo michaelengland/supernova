@@ -1,13 +1,11 @@
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'rspec'
-require 'supernova'
-require "mysql2"
+require File.expand_path("../../lib/supernova.rb", __FILE__)
 require "logger"
 require "fileutils"
 require "ruby-debug"
 require "geokit"
-require "active_record"
 
 def project_root
   Pathname.new(File.expand_path("..", File.dirname(__FILE__)))
@@ -25,32 +23,11 @@ Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
   config.before(:each) do
-    ActiveRecord::Base.connection.execute("TRUNCATE offers")
     Supernova::Criteria.mutable_by_default!
   end
 end
 
-
-ActiveRecord::Base.establish_connection(
-  :adapter => "mysql2",
-  :host => "localhost", 
-  :database => "supernova_test", 
-  :username => "root",
-  :encoding => "utf8"
-)
-
-
 FileUtils.mkdir_p(project_root.join("log"))
-
-ActiveRecord::Base.connection.execute("DROP TABLE IF EXISTS offers")
-ActiveRecord::Base.connection.execute("CREATE TABLE offers (id SERIAL, text TEXT, user_id INTEGER, enabled BOOLEAN, popularity INTEGER, lat FLOAT, lng FLOAT)")
-
-class Offer < ActiveRecord::Base
-  include Supernova::Solr
-  named_search_scope :for_user_ids do |*ids|
-    with(:user_id => ids.flatten)
-  end
-end
 
 class Host
   attr_accessor :id

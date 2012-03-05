@@ -1,4 +1,4 @@
-require 'spec_helper'
+require 'spec_helper_ar'
 require "ostruct"
 
 describe "Supernova::SolrCriteria" do
@@ -200,6 +200,36 @@ describe "Supernova::SolrCriteria" do
         sw = double("sw", :lat => 47.0, :lng => 11.0)
         bounding_box = double("bbox", :ne => ne, :sw => sw)
         criteria.where(:pt.in => bounding_box).to_params[:fq].should include("pt:[47.0,11.0 TO 48.0,12.0]")
+      end
+    end
+    
+    let(:center) { Supernova::Coordinate.new(:lat => 10.1, :lng => 11.2) }
+    let(:circle) { Supernova::Circle.new(:center => center, :radius_in_meters => 100) }
+    let(:circle_criteria) { criteria.where(:center.in => circle) }
+    
+    describe "geo_filter_in_with" do
+      it "finds the correct geo search filter" do
+        circle_criteria.geo_filter_in_with.should be_kind_of(Array)
+        circle_criteria.geo_filter_in_with.first.should == :center
+        circle_criteria.geo_filter_in_with.at(1).should == circle
+      end
+      
+      it "returns nil by default" do
+        criteria.geo_filter_in_with.should be_nil
+      end
+    end
+    
+    describe "searching with circle" do
+      it "sets the correct center" do
+        circle_criteria.to_params[:pt].should == "10.1,11.2"
+      end
+      
+      it "sets the correct distance" do
+        circle_criteria.to_params[:d].should == 0.1
+      end
+      
+      it "sets the sfield to location" do
+        circle_criteria.to_params[:sfield].should == "center"
       end
     end
     
