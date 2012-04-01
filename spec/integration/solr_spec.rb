@@ -3,6 +3,7 @@ require "spec_helper_ar"
 
 describe "Solr" do
   before(:each) do
+    WebMock.disable!
     Supernova::Solr.instance_variable_set("@connection", nil)
     Supernova::Solr.url = "http://localhost:8983/solr/supernova_test"
     Supernova::Solr.truncate!
@@ -23,6 +24,7 @@ describe "Solr" do
   end
   
   after(:each) do
+    WebMock.enable!
     Supernova::Solr.url = nil
     Supernova::Solr.instance_variable_set("@connection", nil)
     Offer.criteria_class = Supernova::SolrCriteria

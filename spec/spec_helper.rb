@@ -1,4 +1,5 @@
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
+$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib/supernova'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'rspec'
 require File.expand_path("../../lib/supernova.rb", __FILE__)

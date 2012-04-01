@@ -1,4 +1,5 @@
 require "spec_helper"
+require "solr_indexer"
 
 describe Supernova::SolrIndexer do
   let(:indexer_clazz) { Class.new(Supernova::SolrIndexer) }
@@ -26,6 +27,8 @@ describe Supernova::SolrIndexer do
     indexer_clazz.has(:description, :type => :text)
     indexer_clazz.has(:created_at, :type => :date)
     indexer_clazz.has(:indexed, :type => :boolean, :virtual => true)
+    stub_request(:post, "http://solr.xx:9333/solr/update/json?commit=true").
+        to_return(:status => 200, :body => "", :headers => {})
   end
   
   before(:each) do
