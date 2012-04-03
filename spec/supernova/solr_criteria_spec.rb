@@ -441,8 +441,8 @@ describe "Supernova::SolrCriteria" do
   
   describe "#typhoeus_response" do
     it "returns the response" do
-      response = double("response")
-      request = double("request", :response => response)
+      response = double("response", :time => 11.0)
+      request = double("request", :response => response, :on_complete => nil)
       Typhoeus::Hydra.hydra.should_receive(:queue).with(request)
       Typhoeus::Hydra.hydra.should_receive(:run)
       criteria.stub!(:typhoeus_request).and_return(request)

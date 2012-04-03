@@ -1,5 +1,6 @@
 # -*- encoding : utf-8 -*-
 require "spec_helper_ar"
+require "webmock/rspec"
 
 describe "Solr" do
   before(:each) do
@@ -28,10 +29,57 @@ describe "Solr" do
     Supernova::Solr.url = nil
     Supernova::Solr.instance_variable_set("@connection", nil)
     Offer.criteria_class = Supernova::SolrCriteria
+    Supernova.logger = nil
   end
   
   def new_criteria
     Offer.search_scope
+  end
+
+  class DummyLogger
+    attr_accessor :logs
+
+    def initialize
+      self.logs = []
+    end
+
+    def info(*args)
+      self.logs << args
+    end
+  end
+  let(:logger) { DummyLogger.new }
+
+  describe "logging" do
+    before(:each) do
+      Supernova.logger = logger
+      Supernova::Solr.truncate!
+      indexer = Supernova::SolrIndexer.new
+      indexer.index_with_json_string([
+          { :title_s => "Title1", :id => 1, :type => "Record" }, 
+          { :title_s => "Title2", :id => 2, :type => "Record" } 
+        ]
+      )
+    end
+
+    it "should log all queries when logger set" do
+      Supernova::SolrCriteria.where(:id => 1).only_ids.typhoeus_response
+      logs = logger.logs
+      logs.count.should == 1
+      logs.first.first.should match(/SUPERNOVA SOLR REQUEST.*finished in/)
+    end
+
+    it "also logs when using execute_async" do
+      crit = Supernova::SolrCriteria.where(:id => 1).only_ids
+      response = nil
+      crit.execute_async do |result|
+        response = result
+      end
+      new_criteria.hydra.run
+      response.should == [{"id"=>"1"}]
+      logs = logger.logs
+      logs.count.should == 1
+      logs.first.first.should match(/SUPERNOVA SOLR REQUEST.*finished in/)
+    end
   end
   
   describe "#index_with_json_string" do
@@ -105,7 +153,6 @@ describe "Solr" do
     end
     
     describe "with extra_attributes_from_doc method defined" do
-      
       class OfferIndexWitheExtraSearchMethodFromDoc < Supernova::SolrIndexer
         has :user_id, :type => :integer
         has :popularity, :type => :integer
@@ -230,7 +277,7 @@ describe "Solr" do
         Supernova::SolrCriteria.new.with(:location_p.in => GeoKit::Bounds.new(outside, inside)).ids.should == [1, 2]
       end
       
-      it "includes the egdes", :wip => true do
+      it "includes the egdes" do
         Supernova::SolrCriteria.new.with(:location_p.inside => GeoKit::Bounds.new(outside, inside)).ids.should == []
       end
     end
@@ -342,6 +389,7 @@ describe "Solr" do
         @collection = collection
       end
       new_criteria.hydra.run
+
       @collection.should be_kind_of(Supernova::Collection)
       @collection.count.should == 3
       @collection.should == [{ "id" => "offers/1" }, { "id" => "offers/2" }, { "id" => "offers/3" }]

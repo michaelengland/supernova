@@ -235,6 +235,9 @@ class Supernova::SolrCriteria < Supernova::Criteria
   
   def typhoeus_response
     request = typhoeus_request
+    request.on_complete do |response|
+      log_typhoeus_response(response)
+    end
     hydra.queue(request)
     hydra.run
     request.response
@@ -242,6 +245,13 @@ class Supernova::SolrCriteria < Supernova::Criteria
   
   def hydra
     Typhoeus::Hydra.hydra
+  end
+
+  def log_typhoeus_response(response)
+    if Supernova.logger
+      to_log = { :params => response.request.params, :host => response.request.host }
+      Supernova.logger.info("SUPERNOVA SOLR REQUEST: #{to_log.to_json} finished in #{response.time}")
+    end
   end
   
   def typhoeus_request
@@ -268,6 +278,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
   def execute_async(&block)
     request = typhoeus_request
     request.on_complete do |response|
+      log_typhoeus_response(response)
       block.call(collection_from_body(response.body))
     end
     hydra.queue(request)
