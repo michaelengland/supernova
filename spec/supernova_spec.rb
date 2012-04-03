@@ -5,6 +5,12 @@ describe Supernova do
     clazz = Class.new
     clazz.send(:include, Supernova::Solr)
   end
+
+  it "allows setting a logger", :wip => true do
+    logger = double("logger")
+    Supernova.logger = logger
+    Supernova.logger.should == logger
+  end
   
   describe "#including" do
     it "can be includes" do
