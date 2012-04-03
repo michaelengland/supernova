@@ -247,9 +247,15 @@ class Supernova::SolrCriteria < Supernova::Criteria
     Typhoeus::Hydra.hydra
   end
 
+  def qtime_from_body(body)
+    if qtime_s = body[/"QTime":(\d+)/, 1]
+      qtime_s.to_i
+    end
+  end
+
   def log_typhoeus_response(response)
     if Supernova.logger
-      to_log = { :params => response.request.params, :host => response.request.host }
+      to_log = { :params => response.request.params, :host => response.request.host, :qtime => qtime_from_body(response.body) }
       Supernova.logger.info("SUPERNOVA SOLR REQUEST: #{to_log.to_json} finished in #{response.time}")
     end
   end
