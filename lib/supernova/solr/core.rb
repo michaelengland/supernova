@@ -66,7 +66,7 @@ class Supernova::Solr::Core
     end
 
     def status(solr_url, core_name)
-      admin_action(solr_url, "STATUS", "core=#{core_name}&wt=json")
+      admin_action(solr_url, "STATUS", "core=#{core_name}")
     end
 
     def index_docs(core_url, docs, commit = false)
@@ -103,7 +103,7 @@ class Supernova::Solr::Core
     end
 
     def admin_action(solr_url, action, attributes)
-      Typhoeus::Request.get("#{solr_url}/admin/cores?action=#{action}&#{attributes}")
+      Typhoeus::Request.get("#{solr_url}/admin/cores?action=#{action}&#{attributes}&wt=json")
     end
   end
 end

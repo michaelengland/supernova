@@ -20,7 +20,7 @@ describe "Supernova::Solr::Core" do
   it "creates the correct core" do
     instance_path = "/path/to/instance"
     data_path = "/path/to/data"
-    stub_request(:get, "http://path.to.solr:1122/admin/cores?action=CREATE&dataDir=/path/to/data&instanceDir=/path/to/instance&name=my_name")
+    stub_request(:get, "http://path.to.solr:1122/admin/cores?action=CREATE&dataDir=/path/to/data&instanceDir=/path/to/instance&name=my_name&wt=json")
       .to_return(:status => 200, :body => "", :headers => {})
     Supernova::Solr::Core.create(url, "my_name", instance_path, data_path)
   end
@@ -36,7 +36,7 @@ describe "Supernova::Solr::Core" do
   it "unloads the correct core" do
     instance_path = "/path/to/instance"
     data_path = "/path/to/data"
-    stub_request(:get, "http://path.to.solr:1122/admin/cores?action=UNLOAD&core=my_name&deleteIndex=true")
+    stub_request(:get, "http://path.to.solr:1122/admin/cores?action=UNLOAD&core=my_name&deleteIndex=true&wt=json")
     .to_return(:status => 200, :body => "", :headers => {})
     Supernova::Solr::Core.unload(url, "my_name")
   end
@@ -44,7 +44,7 @@ describe "Supernova::Solr::Core" do
   it "delegates unload for instance methods" do
     instance_path = "/path/to/instance"
     data_path = "/path/to/data"
-    stub_request(:get, "http://path.to.solr:1122/admin/cores?action=UNLOAD&core=my_name&deleteIndex=true")
+    stub_request(:get, "http://path.to.solr:1122/admin/cores?action=UNLOAD&core=my_name&deleteIndex=true&wt=json")
     .to_return(:status => 200, :body => "", :headers => {})
     Supernova::Solr::Core.new(url, "my_name").unload
   end
