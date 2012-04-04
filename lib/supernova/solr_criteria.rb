@@ -38,10 +38,18 @@ class Supernova::SolrCriteria < Supernova::Criteria
       }
     end
   end
+
+  def q
+    if self.search_options[:search].is_a?(Array)
+      self.search_options[:search].map { |query| "(#{query})" }.join(" AND ")
+    else
+      "*:*"
+    end
+  end
   
   # move this into separate methods (test each separatly)
   def to_params
-    solr_options = { :fq => [], :q => "*:*" }
+    solr_options = { :fq => [], :q => q }
     solr_options[:wt] = search_options[:wt] if search_options[:wt]
     solr_options[:fq] += fq_from_with(self.search_options[:with])
     if self.filters[:without]
@@ -50,9 +58,6 @@ class Supernova::SolrCriteria < Supernova::Criteria
      end
     end
     solr_options[:sort] = convert_search_order(self.search_options[:order].join(", ")) if self.search_options[:order]
-    if self.search_options[:search].is_a?(Array)
-      solr_options[:q] = self.search_options[:search].map { |query| "(#{query})" }.join(" AND ")
-    end
     
     if geo_options = geo_attributes_from_center_distance_in_meters_and_key(geo_center, geo_distance_in_meters, geo_filed_key)
       solr_options.merge!(geo_options)
