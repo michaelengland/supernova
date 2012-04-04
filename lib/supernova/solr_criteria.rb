@@ -52,18 +52,33 @@ class Supernova::SolrCriteria < Supernova::Criteria
   def sort
     convert_search_order(self.search_options[:order].join(", ")) if self.search_options[:order]
   end
+
+  def facet_flag
+    include_facets? ? true : nil
+  end
+
+  def facet_field_attributes
+    self.search_options[:facets].compact.map { |field| solr_field_from_field(field) } if self.search_options[:facets]
+  end
+
+  def facet_query_attributes
+    self.search_options[:facet_queries].values if self.search_options[:facet_queries]
+  end
   
   # move this into separate methods (test each separatly)
   def to_params
-    solr_options = { 
-      :fq => [], :q => q, :sort => sort 
+    solr_options = {
+      :fq => [], :q => q, :sort => sort, 
+      :facet => facet_flag, 
+      "facet.field" => facet_field_attributes,
+      "facet.query" => facet_query_attributes,
     }
     solr_options[:wt] = search_options[:wt] if search_options[:wt]
     solr_options[:fq] += fq_from_with(self.search_options[:with])
     if self.filters[:without]
-     self.filters[:without].each do |field, values| 
-       solr_options[:fq] += values.map { |value| "!#{solr_field_from_field(field)}:#{value}" }
-     end
+      self.filters[:without].each do |field, values| 
+        solr_options[:fq] += values.map { |value| "!#{solr_field_from_field(field)}:#{value}" }
+      end
     end
     
     if geo_options = geo_attributes_from_center_distance_in_meters_and_key(geo_center, geo_distance_in_meters, geo_filed_key)
@@ -76,15 +91,6 @@ class Supernova::SolrCriteria < Supernova::Criteria
       solr_options[:fl] = self.search_options[:select].compact.map { |field| solr_field_from_field(field) }.join(",") 
     end
     solr_options[:fq] << "type:#{self.clazz}" if self.clazz
-    
-    solr_options[:facet] = true if include_facets?
-    if self.search_options[:facets]
-      solr_options["facet.field"] = self.search_options[:facets].compact.map { |field| solr_field_from_field(field) }
-    end
-    
-    if self.search_options[:facet_queries]
-      solr_options["facet.query"] = self.search_options[:facet_queries].values
-    end
     
     if self.search_options[:pagination] || search_options[:rows] || search_options[:start]
       solr_options[:rows] = self.search_options[:rows] || per_page
