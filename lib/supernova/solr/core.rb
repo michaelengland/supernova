@@ -45,7 +45,7 @@ class Supernova::Solr::Core
   end
 
   def initialize(solr_url = nil, name = nil)
-    @solr_url = solr_url.gsub(/[\/]+$/, "")
+    @solr_url = Supernova::Solr.remove_trailing_slash(solr_url)
     @name = name
   end
 

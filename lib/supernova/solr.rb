@@ -23,6 +23,10 @@ module Supernova::Solr
   
   class << self
     attr_accessor :url
+
+    def remove_trailing_slash(url)
+      url.gsub(/[\/]+$/, "")
+    end
     
     def select_url
       "#{url}/select"

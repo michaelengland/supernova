@@ -5,9 +5,17 @@ require "solr/server"
 describe "Supernova::Solr::Server" do
 	let(:url) { "http://path.to.solr:112" }
 
-  it "can be initialized" do
-    Supernova::Solr::Server.new(url).url.should == url
+  describe "#initialize" do
+    it "can be initialized" do
+      Supernova::Solr::Server.new(url).url.should == url
+    end
+
+    it "strips the trailing slash" do
+      Supernova::Solr::Server.new("http://path.to.solr:112/").url.should == "http://path.to.solr:112"
+    end
   end
+
+  
 
   describe "#core_names" do
     it "returns the correct array" do
