@@ -45,7 +45,7 @@ class Supernova::Solr::Core
   end
 
   def initialize(solr_url = nil, name = nil)
-    @solr_url = solr_url
+    @solr_url = solr_url.gsub(/[\/]+$/, "")
     @name = name
   end
 

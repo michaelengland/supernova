@@ -7,10 +7,16 @@ describe "Supernova::Solr::Core" do
   let(:url) { "http://path.to.solr:1122" }
   let(:core_url) { "http://path.to.solr:1122/solr/my_core" }
 
-  it "can be initialized" do
-    core = Supernova::Solr::Core.new(url, "my_name")
-    core.solr_url.should == url
-    core.name.should == "my_name"
+  describe "#initialize" do
+    it "can be initialized" do
+      core = Supernova::Solr::Core.new(url, "my_name")
+      core.solr_url.should == url
+      core.name.should == "my_name"
+    end
+
+    it "removes trailing slashes for the solr_url" do
+      Supernova::Solr::Core.new("http://path.to.solr:1122/solr/", "my_name").url.should == "http://path.to.solr:1122/solr/my_name"
+    end
   end
 
   it "returns the correct url" do
