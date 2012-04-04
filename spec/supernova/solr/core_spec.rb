@@ -117,10 +117,17 @@ describe "Supernova::Solr::Core" do
   end
 
   describe "#select" do
+    let(:body) { { "a" => 1 }.to_json }
     it "selects with default parameters" do
       stub_request(:get, "http://path.to.solr:1122/solr/my_core/select?q=*:*&wt=json")
-        .to_return(:status => 200, :body => "", :headers => {})
-      Supernova::Solr::Core.select(core_url)
+        .to_return(:status => 200, :body => body, :headers => {})
+      Supernova::Solr::Core.select(core_url).should == { "a" => 1 }
+    end
+
+    it "delegates for instance methods" do
+      stub_request(:get, "http://path.to.solr:1122/solr/my_core/select?q=*:*&wt=json")
+        .to_return(:status => 200, :body => body, :headers => {})
+      Supernova::Solr::Core.new("http://path.to.solr:1122/solr", "my_core").select.should == { "a" => 1 }
     end
   end
 

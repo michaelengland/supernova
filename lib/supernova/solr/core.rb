@@ -53,7 +53,7 @@ class Supernova::Solr::Core
     "#{solr_url}/#{name}"
   end
 
-  functional_delegate :commit, :index_docs, :commit, :optimize, :delete_by_query, :truncate, :attributes => :url
+  functional_delegate :commit, :select, :index_docs, :commit, :optimize, :delete_by_query, :truncate, :attributes => :url
   functional_delegate :create, :unload, :status, :attributes => [:solr_url, :name]
 
   class << self
@@ -79,7 +79,11 @@ class Supernova::Solr::Core
     }
 
     def select(core_url, params = {})
-      Typhoeus::Request.get("#{core_url}/select", :params => DEFAULT_PARAMS.merge(params))
+      JSON.parse(select_raw(core_url, params).body)
+    end
+
+    def select_raw(core_url, params = {})
+      get(core_url, "select", :params => DEFAULT_PARAMS.merge(params))
     end
 
     def commit(core_url)
@@ -108,6 +112,10 @@ class Supernova::Solr::Core
         url << "?commit=true" 
       end
       Typhoeus::Request.post(url, :headers => { "Content-Type" => "application/json" }, :body => body)
+    end
+
+    def get(solr_url, relative_path, attributes = {})
+      Typhoeus::Request.get("#{solr_url}/#{relative_path}", attributes)
     end
 
     def admin_action(solr_url, action, attributes)
