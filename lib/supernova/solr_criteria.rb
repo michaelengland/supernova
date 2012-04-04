@@ -39,17 +39,25 @@ class Supernova::SolrCriteria < Supernova::Criteria
     end
   end
 
+  DEFAULT_Q = "*:*"
+
   def q
     if self.search_options[:search].is_a?(Array)
       self.search_options[:search].map { |query| "(#{query})" }.join(" AND ")
     else
-      "*:*"
+      DEFAULT_Q
     end
+  end
+
+  def sort
+    convert_search_order(self.search_options[:order].join(", ")) if self.search_options[:order]
   end
   
   # move this into separate methods (test each separatly)
   def to_params
-    solr_options = { :fq => [], :q => q }
+    solr_options = { 
+      :fq => [], :q => q, :sort => sort 
+    }
     solr_options[:wt] = search_options[:wt] if search_options[:wt]
     solr_options[:fq] += fq_from_with(self.search_options[:with])
     if self.filters[:without]
@@ -57,7 +65,6 @@ class Supernova::SolrCriteria < Supernova::Criteria
        solr_options[:fq] += values.map { |value| "!#{solr_field_from_field(field)}:#{value}" }
      end
     end
-    solr_options[:sort] = convert_search_order(self.search_options[:order].join(", ")) if self.search_options[:order]
     
     if geo_options = geo_attributes_from_center_distance_in_meters_and_key(geo_center, geo_distance_in_meters, geo_filed_key)
       solr_options.merge!(geo_options)
@@ -83,7 +90,14 @@ class Supernova::SolrCriteria < Supernova::Criteria
       solr_options[:rows] = self.search_options[:rows] || per_page
       solr_options[:start] = search_options[:start] || ((current_page - 1) * solr_options[:rows])
     end
-    solr_options
+    filter_empty_strings(solr_options)
+  end
+
+  def filter_empty_strings(params)
+    params.inject({}) do |hash, (key, value)|
+      hash[key] = value if !value.nil?
+      hash
+    end
   end
   
   def geo_filter_in_with
