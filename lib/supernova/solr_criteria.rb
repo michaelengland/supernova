@@ -64,6 +64,26 @@ class Supernova::SolrCriteria < Supernova::Criteria
   def facet_query_attributes
     self.search_options[:facet_queries].values if self.search_options[:facet_queries]
   end
+
+  def wt
+    search_options[:wt] if search_options[:wt]
+  end
+
+  def use_pagination?
+    self.search_options[:pagination] || self.search_options[:rows] || self.search_options[:start]
+  end
+
+  def rows_attribute
+    self.search_options[:rows] || per_page if use_pagination?
+  end
+
+  def start_attribute
+    self.search_options[:start] || current_start if use_pagination?
+  end
+
+  def current_start
+    (current_page - 1) * rows_attribute
+  end
   
   # move this into separate methods (test each separatly)
   def to_params
@@ -72,8 +92,10 @@ class Supernova::SolrCriteria < Supernova::Criteria
       :facet => facet_flag, 
       "facet.field" => facet_field_attributes,
       "facet.query" => facet_query_attributes,
+      :wt => wt,
+      :rows => rows_attribute,
+      :start => start_attribute,
     }
-    solr_options[:wt] = search_options[:wt] if search_options[:wt]
     solr_options[:fq] += fq_from_with(self.search_options[:with])
     if self.filters[:without]
       self.filters[:without].each do |field, values| 
@@ -91,11 +113,6 @@ class Supernova::SolrCriteria < Supernova::Criteria
       solr_options[:fl] = self.search_options[:select].compact.map { |field| solr_field_from_field(field) }.join(",") 
     end
     solr_options[:fq] << "type:#{self.clazz}" if self.clazz
-    
-    if self.search_options[:pagination] || search_options[:rows] || search_options[:start]
-      solr_options[:rows] = self.search_options[:rows] || per_page
-      solr_options[:start] = search_options[:start] || ((current_page - 1) * solr_options[:rows])
-    end
     filter_empty_strings(solr_options)
   end
 
