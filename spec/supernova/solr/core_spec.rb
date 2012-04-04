@@ -21,8 +21,16 @@ describe "Supernova::Solr::Core" do
     instance_path = "/path/to/instance"
     data_path = "/path/to/data"
     stub_request(:get, "http://path.to.solr:1122/admin/cores?action=CREATE&dataDir=/path/to/data&instanceDir=/path/to/instance&name=my_name")
-    .to_return(:status => 200, :body => "", :headers => {})
+      .to_return(:status => 200, :body => "", :headers => {})
     Supernova::Solr::Core.create(url, "my_name", instance_path, data_path)
+  end
+
+  it "correctly queries for core status" do
+    instance_path = "/path/to/instance"
+    data_path = "/path/to/data"
+    stub_request(:get, "http://path.to.solr:1122/admin/cores?action=STATUS&core=my_name&wt=json")
+      .to_return(:status => 200, :body => "", :headers => {})
+    Supernova::Solr::Core.status(url, "my_name")
   end
 
   it "unloads the correct core" do
