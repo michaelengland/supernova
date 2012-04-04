@@ -74,6 +74,14 @@ class Supernova::Solr::Core
       post_update(core_url, body, commit)
     end
 
+    DEFAULT_PARAMS = {
+      :q => "*:*", :wt => "json"
+    }
+
+    def select(core_url, params = {})
+      Typhoeus::Request.get("#{core_url}/select", :params => DEFAULT_PARAMS.merge(params))
+    end
+
     def commit(core_url)
       post_update(core_url, { "commit" => {} }.to_json)
     end

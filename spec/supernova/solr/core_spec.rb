@@ -110,6 +110,14 @@ describe "Supernova::Solr::Core" do
     end
   end
 
+  describe "#select" do
+    it "selects with default parameters" do
+      stub_request(:get, "http://path.to.solr:1122/solr/my_core/select?q=*:*&wt=json")
+        .to_return(:status => 200, :body => "", :headers => {})
+      Supernova::Solr::Core.select(core_url)
+    end
+  end
+
   it "calls the commit statement" do
     stub_request(:post, "http://path.to.solr:1122/update/json")
       .with(:body => "{\"commit\":{}}", :headers => {'Content-Type'=>'application/json'})
