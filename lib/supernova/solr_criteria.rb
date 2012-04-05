@@ -28,16 +28,6 @@ class Supernova::SolrCriteria < Supernova::Criteria
   def geo_filed_key
     geo_filter_in_with ? geo_filter_in_with.first : :location
   end
-  
-  def geo_attributes_from_center_distance_in_meters_and_key(center, distance_in_meters, key)
-    if center && distance_in_meters
-      {
-        :pt => "#{center.lat},#{center.lng}",
-        :d => (distance_in_meters.to_f / Supernova::KM_TO_METER),
-        :sfield => solr_field_from_field(key)
-      }
-    end
-  end
 
   DEFAULT_Q = "*:*"
 
@@ -84,6 +74,22 @@ class Supernova::SolrCriteria < Supernova::Criteria
   def current_start
     (current_page - 1) * rows_attribute
   end
+
+  def geo_search?
+    !!(geo_center && geo_distance_in_meters)
+  end
+
+  def pt
+    "#{geo_center.lat},#{geo_center.lng}" if geo_search?
+  end
+
+  def d
+    (geo_distance_in_meters.to_f / Supernova::KM_TO_METER) if geo_search?
+  end
+
+  def sfield
+    solr_field_from_field(geo_filed_key) if geo_search?
+  end
   
   # move this into separate methods (test each separatly)
   def to_params
@@ -95,6 +101,9 @@ class Supernova::SolrCriteria < Supernova::Criteria
       :wt => wt,
       :rows => rows_attribute,
       :start => start_attribute,
+      :pt => pt,
+      :d => d,
+      :sfield => sfield,
     }
     solr_options[:fq] += fq_from_with(self.search_options[:with])
     if self.filters[:without]
@@ -103,10 +112,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
       end
     end
     
-    if geo_options = geo_attributes_from_center_distance_in_meters_and_key(geo_center, geo_distance_in_meters, geo_filed_key)
-      solr_options.merge!(geo_options)
-      solr_options[:fq] << "{!geofilt}"
-    end
+    solr_options[:fq] << "{!geofilt}" if geo_search?
     
     if self.search_options[:select]
       self.search_options[:select] << "id" if !self.search_options[:select].map(&:to_s).include?("id")
