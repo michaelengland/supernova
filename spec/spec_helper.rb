@@ -27,6 +27,10 @@ RSpec.configure do |config|
   config.before(:each) do
     Supernova::Criteria.mutable_by_default!
   end
+
+  config.after(:each) do
+    Supernova::Solr.url = nil
+  end
 end
 
 FileUtils.mkdir_p(project_root.join("log"))
