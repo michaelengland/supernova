@@ -128,10 +128,6 @@ describe Supernova::SolrIndexer do
     it "sets ids to all when nil" do
       Supernova::SolrIndexer.new.ids.should == :all
     end
-    
-    it "sets max_rows_to_direct_index to 100" do
-      Supernova::SolrIndexer.new.max_rows_to_direct_index.should == 100
-    end
   end
   
   describe "index!" do
@@ -479,14 +475,7 @@ describe Supernova::SolrIndexer do
       custom_indexer.index_rows([row1, row2])
     end
     
-    it "calls map_directly when number of rows < max_rows_to_direct_index" do
-      custom_indexer.should_receive(:max_rows_to_direct_index).and_return 100
-      custom_indexer.should_receive(:index_directly).with([mapped1, mapped2])
-      custom_indexer.index_rows([row1, row2])
-    end
-    
-    it "calls map_directly when number of rows < max_rows_to_direct_index" do
-      custom_indexer.should_receive(:max_rows_to_direct_index).and_return 1
+    it "calls index_with_json" do
       custom_indexer.should_receive(:index_with_json).with([mapped1, mapped2])
       custom_indexer.index_rows([row1, row2])
     end

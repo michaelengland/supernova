@@ -4,7 +4,7 @@ require "time"
 require "typhoeus"
 
 class Supernova::SolrIndexer
-  attr_accessor :options, :db, :ids, :max_rows_to_direct_index, :local_solr, :current_json_string
+  attr_accessor :options, :db, :ids, :local_solr, :current_json_string
   attr_writer :debug
   
   MAX_ROWS_TO_DIRECT_INDEX = 100
@@ -68,7 +68,6 @@ class Supernova::SolrIndexer
     options.each do |key, value|
       self.send(:"#{key}=", value) if self.respond_to?(:"#{key}=")
     end
-    self.max_rows_to_direct_index ||= MAX_ROWS_TO_DIRECT_INDEX
     self.options = options
     self.ids ||= :all
   end
@@ -220,14 +219,8 @@ class Supernova::SolrIndexer
     debug "mapped %COUNT% rows to solr in %TIME%" do
       rows.map! { |r| map_for_solr(r) }
     end
-    if self.max_rows_to_direct_index < rows.count
-      debug "indexed #{rows.length} rows with json in %TIME%" do
-        index_with_json(rows)
-      end
-    else
-      debug "indexed #{rows.length} rows directly in %TIME%" do
-        index_directly(rows)
-      end
+    debug "indexed #{rows.length} rows with json in %TIME%" do
+      index_with_json(rows)
     end
   end
   
