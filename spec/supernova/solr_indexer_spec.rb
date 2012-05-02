@@ -456,20 +456,6 @@ describe Supernova::SolrIndexer do
       indexer.should_receive(:index_with_json_string).with([1])
       indexer.index_with_json([1])
     end
-    
-    it "does not break when called with empty array" do
-      index.should_not_receive(:index_with_json_string)
-      index.should_not_receive(:index_with_json_file)
-      lambda {
-        indexer.index_with_json([])
-      }.should_not raise_error
-    end
-    
-    it "calls index_with_json_file when asked to" do
-      indexer.options[:use_json_file] = true
-      indexer.should_receive(:index_with_json_file).with([1])
-      indexer.index_with_json([1])
-    end
   end
   
   describe "#index_rows" do
@@ -517,22 +503,6 @@ describe Supernova::SolrIndexer do
     end
   end
   
-  describe "#index_with_json_file" do
-    let(:rows) { [{ "b" => 2 }, { "a" => 1 }] }
-    
-    it "calls write_to_file on all rows" do
-      indexer.should_receive(:write_to_file).with(rows.first)
-      indexer.should_receive(:write_to_file).with(rows.at(1))
-      indexer.stub!(:finish)
-      indexer.index_with_json_file(rows)
-    end
-
-    it "calls finish" do
-      indexer.should_receive(:finish)
-      indexer.index_with_json_file(rows)
-    end
-  end
-  
   describe "#index_directly" do
     before(:each) do
       Supernova::Solr.stub!(:connection).and_return solr
@@ -561,126 +531,6 @@ describe Supernova::SolrIndexer do
     xit "does not call commit when rows is empty" do
       solr.should_not_receive(:commit)
       indexer.index_directly([])
-    end
-  end
-  
-  describe "#index_file_path" do
-    it "returns the set file_path" do
-      indexer.index_file_path = "/some/path"
-      indexer.index_file_path.should == "/some/path"
-    end
-    
-    it "returns a random file path when not set" do
-      Time.stub(:now).and_return Time.at(112233)
-      indexer.index_file_path.should == "/tmp/index_file_112233.json"
-    end
-  end
-  
-  describe "#write_to_file" do
-    describe "with the stream not being open" do
-      it "opens a new stream" do
-        indexer.index_file_path = "/tmp/some_path.json"
-        File.should_receive(:open).with("/tmp/some_path.json", "w")
-        indexer.write_to_file(to_index)
-      end
-      
-      it "writes the opening brackets and the first line" do
-        file_stub.should_receive(:puts).with("\{")
-        file_stub.should_receive(:print).with do |str|
-          str.should include("add")
-          str.should include("\"title\":\"Some Title\"")
-          str.should include("\"id\":1")
-        end
-        indexer.write_to_file(to_index)
-      end
-      
-      it "only write fields which are not null" do
-        file_stub.stub(:print)
-        file_stub.should_not_receive(:print).with do |str|
-          str.include?("text")
-        end
-        indexer.write_to_file(to_index.merge(:text => nil))
-      end
-      
-      it "separates the first and the second line" do
-        file_stub.should_receive(:puts).with("\{")
-        file_stub.should_receive(:print).with(/\"add\":\{\"doc\"/)
-        file_stub.should_receive(:print).with(%(,\n"add":{"doc":{"id":2}}))
-        indexer.write_to_file(to_index)
-        indexer.write_to_file({:id => 2})
-      end
-    end
-    
-    it "does not open a new file when already open" do
-      indexer.instance_variable_set("@index_file_stream", file_stub)
-      File.should_not_receive(:open)
-      indexer.write_to_file(to_index)
-    end
-  end
-  
-  describe "#finish" do
-    it "raises an error when stream not open" do
-      lambda {
-        indexer.finish
-      }.should raise_error("nothing to index")
-    end
-    
-    describe "with something being written" do
-      it "writes closing bracket to file" do
-        indexer.write_to_file(to_index)
-        file_stub.should_receive(:puts).with("\}")
-        indexer.finish
-      end
-
-      it "closes the stream" do
-        indexer.write_to_file(to_index)
-        file_stub.should_receive(:close)
-        indexer.finish
-      end
-      
-      it "calls do_index_file" do
-        indexer.write_to_file(to_index)
-        indexer.should_receive(:do_index_file)
-        indexer.finish
-      end
-    end
-  end
-  
-  describe "#do_index_file" do
-    it "raises an error when solr_url not configues" do
-      Supernova::Solr.url = nil
-      lambda {
-        Supernova::SolrIndexer.new.do_index_file
-      }.should raise_error("solr not configured")
-    end
-    
-    it "calls the correct curl command" do
-      indexer = Supernova::SolrIndexer.new(:index_file_path => "/tmp/some_path.json", :local_solr => true)
-      Kernel.should_receive(:`).with("curl -s 'http://solr.xx:9333/solr/update/json?commit=true\\&stream.file=/tmp/some_path.json'").and_return solr_index_response
-      indexer.do_index_file(:local => true)
-    end
-    
-    it "calls rm on file" do
-      indexer = Supernova::SolrIndexer.new(:index_file_path => "/tmp/some_path.json", :local_solr => true)
-      Kernel.should_receive(:`).with("curl -s 'http://solr.xx:9333/solr/update/json?commit=true\\&stream.file=/tmp/some_path.json'").and_return solr_index_response
-      FileUtils.should_receive(:rm_f).with("/tmp/some_path.json")
-      indexer.do_index_file(:local => true)
-    end
-    
-    it "does not call rm when not successful" do
-      indexer = Supernova::SolrIndexer.new(:index_file_path => "/tmp/some_path.json", :local_solr => true)
-      Kernel.should_receive(:`).with("curl -s 'http://solr.xx:9333/solr/update/json?commit=true\\&stream.file=/tmp/some_path.json'").and_return %(<int name="status">1</int>)
-      FileUtils.should_not_receive(:rm_f).with("/tmp/some_path.json")
-      lambda {
-        indexer.do_index_file(:local => true)
-      }.should raise_error
-    end
-    
-    it "executes the correct curl call when not local" do
-      # curl 'http://localhost:8983/solr/update/json?commit=true' --data-binary @books.json -H 'Content-type:application/json'
-      indexer.index_file_path = "/tmp/some_path.json"
-      Kernel.should_receive(:`).with("cd /tmp && curl -s 'http://solr.xx:9333/solr/update/json?commit=true' --data-binary @some_path.json -H 'Content-type:application/json'").and_return solr_index_response
-      indexer.do_index_file
     end
   end
 

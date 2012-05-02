@@ -5,7 +5,7 @@ require "typhoeus"
 
 class Supernova::SolrIndexer
   attr_accessor :options, :db, :ids, :max_rows_to_direct_index, :local_solr, :current_json_string
-  attr_writer :index_file_path, :debug
+  attr_writer :debug
   
   MAX_ROWS_TO_DIRECT_INDEX = 100
   
@@ -233,7 +233,7 @@ class Supernova::SolrIndexer
   
   def index_with_json(rows)
     return false if rows.empty?
-    options && options[:use_json_file] ? index_with_json_file(rows) : index_with_json_string(rows)
+    index_with_json_string(rows)
   end
   
   def solr_rows_to_index_for_query(query)
@@ -250,19 +250,6 @@ class Supernova::SolrIndexer
   # just to be backwards compatible
   def index_directly(rows)
     index_with_json(rows)
-    # rows.each do |row|
-    #   row = Supernova::Solr.connection.add(row)
-    # end
-    # Supernova::Solr.connection.commit if rows.any?
-  end
-  
-  def index_with_json_file(rows)
-    debug "wrote #{rows.count} rows to the json file in %TIME%" do
-      rows.each do |row|
-        write_to_file(row)
-      end
-    end
-    finish
   end
   
   def append_to_json_string(row)
@@ -299,60 +286,11 @@ class Supernova::SolrIndexer
     self.ids.is_a?(Array)
   end
   
-  def index_file_path
-    @index_file_path ||= File.expand_path("/tmp/index_file_#{Time.now.to_i}.json")
-  end
-  
-  def write_to_file(to_index)
-    prefix = ",\n"
-    if !stream_open?
-      index_file_stream.puts "{"
-      prefix = nil
-    end
-    filtered = to_index.inject({}) do |hash, (key, value)|
-      hash[key] = value if value.to_s.strip.length > 0
-      hash
-    end
-    index_file_stream.print(%(#{prefix}"add":#{({:doc => filtered}).to_json}))
-  end
-  
-  def finish
-    raise "nothing to index" if !stream_open?
-    index_file_stream.puts("\}")
-    index_file_stream.close
-    do_index_file
-  end
-  
-  def stream_open?
-    !@index_file_stream.nil?
-  end
-  
-  def index_file_stream
-    @index_file_stream ||= File.open(index_file_path, "w")
-  end
-  
   def solr_url
     Supernova::Solr.url.present? ? Supernova::Solr.url.to_s.gsub(/\/$/, "") : nil
   end
   
   def solr_update_url
     "#{solr_url}/update/json"
-  end
-  
-  def do_index_file(options = {})
-    raise "solr not configured" if solr_url.nil?
-    cmd = if self.local_solr
-      %(curl -s '#{solr_update_url}?commit=true\\&stream.file=#{index_file_path}')
-    else
-      %(cd #{File.dirname(index_file_path)} && curl -s '#{solr_url}/update/json?commit=true' --data-binary @#{File.basename(index_file_path)} -H 'Content-type:application/json')
-    end
-    debug "run command: #{cmd}"
-    out = Kernel.send(:`, cmd)
-    if !out.to_s.include?(%(<int name=\"status\">0</int>))
-      debug "ERROR: #{out}"
-      raise "unable to index #{index_file_path}: #{out}" 
-    end
-    FileUtils.rm_f(self.index_file_path)
-    out
   end
 end

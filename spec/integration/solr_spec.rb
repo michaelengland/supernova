@@ -132,11 +132,9 @@ describe "Solr" do
       indexer = OfferIndex.new(:db => ActiveRecord::Base.connection, :max_rows_to_direct_index => 0)
       indexer.options[:use_json_file] = true
       indexer.index!
-      indexer.instance_variable_get("@index_file_path").should_not be_nil
       OfferIndex.search_scope.total_entries.should == 2
       OfferIndex.search_scope.first.instance_variable_get("@original_search_doc")["indexed_at_dt"].should_not be_nil
       OfferIndex.search_scope.order("user_id desc").populate.results.should == [offer2, offer1]
-      File.should_not be_exists(indexer.instance_variable_get("@index_file_path"))
     end
     
     it "indexes with a local file" do
@@ -145,11 +143,9 @@ describe "Solr" do
       indexer = OfferIndex.new(:db => ActiveRecord::Base.connection, :max_rows_to_direct_index => 0, :local_solr => true)
       indexer.options[:use_json_file] = true
       indexer.index!
-      indexer.instance_variable_get("@index_file_path").should_not be_nil
       OfferIndex.search_scope.first.instance_variable_get("@original_search_doc")["indexed_at_dt"].should_not be_nil
       OfferIndex.search_scope.total_entries.should == 2
       OfferIndex.search_scope.order("user_id desc").populate.results.should == [offer2, offer1]
-      File.should_not be_exists(indexer.instance_variable_get("@index_file_path"))
     end
     
     describe "with extra_attributes_from_doc method defined" do
