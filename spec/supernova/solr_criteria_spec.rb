@@ -14,6 +14,27 @@ describe "Supernova::SolrCriteria" do
       "response"=>{"start"=>0, "docs"=>docs, "numFound"=>2}, "responseHeader"=>{"QTime"=>4, "params"=>{"fq"=>"type:Offer", "q"=>"*:*", "wt"=>"ruby"}, "status"=>0}
     }
   end
+
+  describe "with custom url" do
+    it "allows setting a solr_url" do
+      criteria = Supernova::SolrCriteria.new
+      criteria.solr_url = "path/to/solr"
+      criteria.solr_url.should == "path/to/solr"
+    end
+
+    it "returns the default solr_url when not set" do
+      Supernova::Solr.url = "rgne"
+      Supernova::SolrCriteria.new.solr_url.should == "rgne"
+    end
+
+    it "returns the correct select_url" do
+      crit = Supernova::SolrCriteria.new
+      Supernova::Solr.url = "rgne"
+      crit.select_url.should == "rgne/select"
+      crit.solr_url = "/path/to/solr"
+      crit.select_url.should == "/path/to/solr/select"
+    end
+  end
   
   describe "#where" do
     it "sets the correct simple filters" do
@@ -488,7 +509,7 @@ describe "Supernova::SolrCriteria" do
     end
     
     it "sets the correct url" do
-      Supernova::Solr.stub(:select_url).and_return("my_select_url")
+      criteria.stub(:select_url).and_return("my_select_url")
       criteria.typhoeus_request.url.should == "my_select_url?q=%2A%3A%2A&wt=json"
     end
     

@@ -1,6 +1,18 @@
 # -*- encoding : utf-8 -*-
 
 class Supernova::SolrCriteria < Supernova::Criteria
+  DEFAULT_Q = "*:*"
+
+  attr_writer :solr_url
+
+  def solr_url
+    @solr_url || Supernova::Solr.url
+  end
+
+  def select_url
+    "#{solr_url}/select"
+  end
+
   def geo_circle_from_with
     geo_filter_in_with.at(1) if geo_filter_in_with
   end
@@ -28,8 +40,6 @@ class Supernova::SolrCriteria < Supernova::Criteria
   def geo_filed_key
     geo_filter_in_with ? geo_filter_in_with.first : :location
   end
-
-  DEFAULT_Q = "*:*"
 
   def q
     if self.search_options[:search].is_a?(Array)
@@ -309,7 +319,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
   end
   
   def typhoeus_request
-    Typhoeus::Request.new(Supernova::Solr.select_url, :params => to_params.merge(:wt => "json"), :method => :get)
+    Typhoeus::Request.new(select_url, :params => to_params.merge(:wt => "json"), :method => :get)
   end
   
   def execute
