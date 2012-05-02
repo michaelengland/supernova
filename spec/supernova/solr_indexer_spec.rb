@@ -1,5 +1,7 @@
 require "spec_helper"
+require "spec_helper_ar"
 require "solr_indexer"
+require "webmock/rspec"
 
 describe Supernova::SolrIndexer do
   let(:indexer_clazz) { Class.new(Supernova::SolrIndexer) }
