@@ -239,10 +239,13 @@ class Supernova::SolrIndexer
     debug "getting rows for #{query[0,100]}"
     index_rows(query_db(query))
   end
-  
-  # just to be backwards compatible
-  def index_directly(rows)
-    index_with_json(rows)
+
+  def index_with_json_string(rows)
+    rows.each do |row|
+      append_to_json_string(row)
+    end
+    finalize_json_string
+    post_json_string
   end
   
   def append_to_json_string(row)
@@ -265,14 +268,6 @@ class Supernova::SolrIndexer
     ).tap do |response|
       self.current_json_string = nil
     end
-  end
-  
-  def index_with_json_string(rows)
-    rows.each do |row|
-      append_to_json_string(row)
-    end
-    finalize_json_string
-    post_json_string
   end
   
   def ids_given?

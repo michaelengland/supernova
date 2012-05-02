@@ -491,37 +491,6 @@ describe Supernova::SolrIndexer do
       indexer.index_query(query)
     end
   end
-  
-  describe "#index_directly" do
-    before(:each) do
-      Supernova::Solr.stub!(:connection).and_return solr
-    end
-    
-    it "deligates to index_with_json" do
-      row1 = double("1")
-      row2 = double("2")
-      rows = [row1, row2]
-      indexer.should_receive(:index_with_json).with(rows).and_return "the result"
-      indexer.index_directly(rows).should == "the result"
-    end
-    
-    xit "calls the correct add statement" do
-
-      solr.should_receive(:add).with(row1)
-      solr.should_receive(:add).with(row2)
-      indexer.index_directly(rows)
-    end
-    
-    xit "calls commit" do
-      solr.should_receive(:commit)
-      indexer.index_directly([double("1")])
-    end
-    
-    xit "does not call commit when rows is empty" do
-      solr.should_not_receive(:commit)
-      indexer.index_directly([])
-    end
-  end
 
   describe "define mappings" do
     let(:blank_indexer_clazz) { Class.new(Supernova::SolrIndexer) }
