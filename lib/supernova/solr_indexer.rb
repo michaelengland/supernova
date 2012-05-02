@@ -7,8 +7,6 @@ class Supernova::SolrIndexer
   attr_accessor :options, :db, :ids, :local_solr, :current_json_string
   attr_writer :debug
   
-  MAX_ROWS_TO_DIRECT_INDEX = 100
-  
   include Supernova::Solr
   
   class << self
