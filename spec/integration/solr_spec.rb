@@ -49,6 +49,17 @@ describe "Solr" do
   end
   let(:logger) { DummyLogger.new }
 
+  it "allows setting of the read_url" do
+    Supernova::Solr.url = "base/url"
+    Supernova::Solr.read_url = "read/url"
+    Supernova::Solr.read_url.should == "read/url"
+  end
+
+  it "returns the default url for write_url" do
+    Supernova::Solr.url = "base/url"
+    Supernova::Solr.write_url.should == "base/url"
+  end
+
   describe "logging" do
     before(:each) do
       Supernova.logger = logger

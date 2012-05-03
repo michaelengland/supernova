@@ -23,6 +23,12 @@ module Supernova::Solr
   
   class << self
     attr_accessor :url
+    attr_writer :read_url
+    alias_method :write_url, :url
+
+    def read_url
+      @read_url || url
+    end
 
     def remove_trailing_slash(url)
       url.gsub(/[\/]+$/, "")
