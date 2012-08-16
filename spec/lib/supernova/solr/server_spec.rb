@@ -4,6 +4,8 @@ require "solr/server"
 
 describe "Supernova::Solr::Server" do
   let(:url) { "http://path.to.solr:112" }
+  let(:server) { Supernova::Solr::Server.new(url) }
+  
 
   describe "#initialize" do
     it "can be initialized" do
@@ -19,7 +21,7 @@ describe "Supernova::Solr::Server" do
     it "returns the correct array" do
       stub_request(:get, "http://path.to.solr:112/admin/cores?action=STATUS&wt=json")
         .to_return(:status => 200, :body => project_root.join("spec/fixtures/cores_status.json").read, :headers => {})
-      Supernova::Solr::Server.core_names(url).should == %w(project_test supernova_test)
+      server.core_names.should == %w(project_test supernova_test)
     end
   end
 
@@ -35,7 +37,7 @@ describe "Supernova::Solr::Server" do
           :headers => {'Content-Type'=>'application/json'}
         )
         .to_return(:status => 200, :body => "", :headers => {})
-      Supernova::Solr::Server.index_docs(url, rows)
+      server.index_docs(rows)
     end
 
     it "indexes the correct rows with commit" do
@@ -49,7 +51,7 @@ describe "Supernova::Solr::Server" do
           :headers => {'Content-Type'=>'application/json'}
         )
         .to_return(:status => 200, :body => "", :headers => {})
-      Supernova::Solr::Server.index_docs(url, rows, true)
+      server.index_docs(rows, true)
     end
 
     it "indexes the correct rows with commitWithin" do
@@ -63,33 +65,18 @@ describe "Supernova::Solr::Server" do
           :headers => {'Content-Type'=>'application/json'}
         )
         .to_return(:status => 200, :body => "", :headers => {})
-      Supernova::Solr::Server.index_docs(url, rows, 10_000)
+      server.index_docs(rows, 10_000)
     end
   end
 
-  describe "#select" do
-    let(:body) { { "a" => 1 }.to_json }
-    it "selects with default parameters" do
-      stub_request(:get, "http://path.to.solr:112/select?q=*:*&wt=json")
-        .to_return(:status => 200, :body => body, :headers => {})
-      Supernova::Solr::Server.select(url).should == { "a" => 1 }
-    end
-
-    it "delegates for instance methods" do
-      stub_request(:get, "http://path.to.solr:112/select?q=*:*&wt=json")
-        .to_return(:status => 200, :body => body, :headers => {})
-      Supernova::Solr::Server.new("http://path.to.solr:112").select.should == { "a" => 1 }
-    end
+  it "selects with default parameter" do
+    body = { "a" => 1 }.to_json
+    stub_request(:get, "http://path.to.solr:112/select?q=*:*&wt=json")
+      .to_return(:status => 200, :body => body, :headers => {})
+    Supernova::Solr::Server.new("http://path.to.solr:112").select.should == { "a" => 1 }
   end
 
   it "calls the commit statement" do
-    stub_request(:post, "http://path.to.solr:112/update/json")
-      .with(:body => "{\"commit\":{}}", :headers => {'Content-Type'=>'application/json'})
-      .to_return(:status => 200, :body => "", :headers => {})
-    Supernova::Solr::Server.commit(url)
-  end
-
-  it "delegates commit for instance methods" do
     stub_request(:post, "http://path.to.solr:112/my_name/update/json")
       .with(:body => "{\"commit\":{}}", :headers => {'Content-Type'=>'application/json'})
       .to_return(:status => 200, :body => "", :headers => {})
@@ -102,7 +89,7 @@ describe "Supernova::Solr::Server" do
     stub_request(:post, "http://path.to.solr:112/update/json")
       .with(:body => "{\"optimize\":{}}", :headers => {'Content-Type'=>'application/json'})
       .to_return(:status => 200, :body => "", :headers => {})
-    Supernova::Solr::Server.optimize(url)
+    server.optimize
   end
 
   describe "#delete" do
@@ -110,14 +97,14 @@ describe "Supernova::Solr::Server" do
       stub_request(:post, "http://path.to.solr:112/update/json")
         .with(:body => "{\"delete\":{\"query\":\"id:1\"}}", :headers => {'Content-Type'=>'application/json'})
         .to_return(:status => 200, :body => "", :headers => {})
-      Supernova::Solr::Server.delete_by_query(url, "id:1")
+      server.delete_by_query("id:1")
     end
 
     it "truncates the index" do
       stub_request(:post, "http://path.to.solr:112/update/json?commit=true")
         .with(:body => "{\"delete\":{\"query\":\"*:*\"}}", :headers => {'Content-Type'=>'application/json'})
         .to_return(:status => 200, :body => "", :headers => {})
-      Supernova::Solr::Server.truncate(url, true)
+      server.truncate(true)
     end
   end
 end

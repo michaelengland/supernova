@@ -14,25 +14,21 @@ class Supernova::Solr::Core < Supernova::Solr::Server
     "#{solr_url}/#{name}"
   end
 
-  functional_delegate :create, :unload, :status, :attributes => [:solr_url, :name]
+  def create(instance_dir, data_dir)
+    admin_action("CREATE", "name=#{name}&instanceDir=#{instance_dir}&dataDir=#{data_dir}")
+  end
 
-  class << self
-    def create(solr_url, core_name, instance_dir, data_dir)
-      admin_action(solr_url, "CREATE", "name=#{core_name}&instanceDir=#{instance_dir}&dataDir=#{data_dir}")
-    end
+  def unload
+    admin_action("UNLOAD", "core=#{name}&deleteIndex=true")
+  end
 
-    def unload(solr_url, core_name)
-      admin_action(solr_url, "UNLOAD", "core=#{core_name}&deleteIndex=true")
-    end
+  def status
+    admin_action("STATUS", "core=#{name}")
+  end
 
-    def status(solr_url, core_name)
-      admin_action(solr_url, "STATUS", "core=#{core_name}")
-    end
+  private
 
-    private
-
-    def admin_action(solr_url, action, attributes)
-      http_get("#{solr_url}/admin/cores?action=#{action}&#{attributes}&wt=json")
-    end
+  def admin_action(action, attributes)
+    http_get("#{solr_url}/admin/cores?action=#{action}&#{attributes}&wt=json")
   end
 end
