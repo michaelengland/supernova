@@ -1,9 +1,9 @@
-require File.expand_path("../../../../spec/spec_helper", __FILE__)
+require "spec_helper"
 require "webmock/rspec"
 require "solr/server"
 
 describe "Supernova::Solr::Server" do
-	let(:url) { "http://path.to.solr:112" }
+  let(:url) { "http://path.to.solr:112" }
 
   describe "#initialize" do
     it "can be initialized" do
