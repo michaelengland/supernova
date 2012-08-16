@@ -32,7 +32,7 @@ class Supernova::Solr::Core < Supernova::Solr::Server
     private
 
     def admin_action(solr_url, action, attributes)
-      Typhoeus::Request.get("#{solr_url}/admin/cores?action=#{action}&#{attributes}&wt=json")
+      http_get("#{solr_url}/admin/cores?action=#{action}&#{attributes}&wt=json")
     end
   end
 end

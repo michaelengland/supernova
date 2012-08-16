@@ -327,7 +327,14 @@ class Supernova::SolrCriteria < Supernova::Criteria
   end
   
   def collection_from_body(body)
-    collection_from_json(JSON.parse(body))
+    collection_from_json(parse_json(body))
+  end
+
+  def parse_json(body)
+    JSON.parse(body)
+  rescue => err
+    puts "ERROR: #{err.class} unable to parse #{body.inspect}"
+    raise err
   end
   
   def collection_from_json(json)

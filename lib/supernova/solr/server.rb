@@ -1,11 +1,11 @@
 require "json"
 
 class Supernova::Solr::Server
-	attr_reader :url
+  attr_reader :url
 
-	def initialize(url)
-		@url = Supernova::Solr.remove_trailing_slash(url)
-	end
+  def initialize(url)
+    @url = Supernova::Solr.remove_trailing_slash(url)
+  end
 
   class << self
     # class Page
@@ -55,7 +55,7 @@ class Supernova::Solr::Server
     }
 
     def core_names(url)
-      JSON.parse(Typhoeus::Request.get("#{url}/admin/cores?action=STATUS&wt=json").body)["status"].keys
+      JSON.parse(http_get("#{url}/admin/cores?action=STATUS&wt=json").body)["status"].keys
     end
 
     def index_docs(core_url, docs, commit = false)
@@ -90,7 +90,7 @@ class Supernova::Solr::Server
     private
 
     def get(solr_url, relative_path, attributes = {})
-      Typhoeus::Request.get("#{solr_url}/#{relative_path}", attributes)
+      http_get("#{solr_url}/#{relative_path}", attributes)
     end
 
     def post_update(core_url, body, commit = false)
@@ -101,6 +101,10 @@ class Supernova::Solr::Server
         url << "?commit=true" 
       end
       Typhoeus::Request.post(url, :headers => { "Content-Type" => "application/json" }, :body => body)
+    end
+
+    def http_get(url, attributes = {})
+      Typhoeus::Request.get(url, attributes)
     end
   end
 end

@@ -1,27 +1,38 @@
 # -*- encoding : utf-8 -*-
 require "spec_helper_ar"
 require "webmock/rspec"
+require "supernova/solr/server"
 
 describe "Solr" do
+  let(:url) { "http://localhost:8985/solr/supernova_test" }
+  
+  let(:server) { Supernova::Solr::Server.new(url) }
+  
   before(:each) do
     WebMock.disable!
+    Supernova::Solr.url = url
     Supernova::Solr.instance_variable_set("@connection", nil)
-    Supernova::Solr.url = "http://localhost:8983/solr/supernova_test"
-    Supernova::Solr.truncate!
+    server.truncate
     Offer.criteria_class = Supernova::SolrCriteria
     root = Geokit::LatLng.new(47, 11)
     # endpoint = root.endpoint(90, 50, :units => :kms)
     e_lat = 46.9981112912042
     e_lng = 11.6587158814378
-    Supernova::Solr.add(:id => "offers/1", :type => "Offer", :user_id_i => 1, :enabled_b => false, 
-      :text_t => "Hans Meyer", :popularity_i => 10, 
-      :location_p => "#{root.lat},#{root.lng}", :type => "Offer"
+    server.index_docs(
+      [
+        :id => "offers/1", :type => "Offer", :user_id_i => 1, :enabled_b => false, 
+        :text_t => "Hans Meyer", :popularity_i => 10, 
+        :location_p => "#{root.lat},#{root.lng}", :type => "Offer"
+      ]
     )
-    Supernova::Solr.add(:id => "offers/2", :user_id_i => 2, :enabled_b => true, :text_t => "Marek Mintal", 
-      :popularity_i => 1, 
-      :location_p => "#{e_lat},#{e_lng}", :type => "Offer"
+    server.index_docs(
+      [
+        :id => "offers/2", :user_id_i => 2, :enabled_b => true, :text_t => "Marek Mintal", 
+        :popularity_i => 1, 
+        :location_p => "#{e_lat},#{e_lng}", :type => "Offer"
+      ]
     )
-    Supernova::Solr.commit!
+    server.commit
   end
   
   after(:each) do
@@ -63,7 +74,7 @@ describe "Solr" do
   describe "logging" do
     before(:each) do
       Supernova.logger = logger
-      Supernova::Solr.truncate!
+      server.truncate
       indexer = Supernova::SolrIndexer.new
       indexer.index_with_json_string([
           { :title_s => "Title1", :id => 1, :type => "Record" }, 
@@ -95,7 +106,7 @@ describe "Solr" do
   
   describe "#index_with_json_string" do
     it "indexes the correct rows" do
-      Supernova::Solr.truncate!
+      server.truncate
       indexer = Supernova::SolrIndexer.new
       indexer.index_with_json_string([
           { :title_s => "Title1", :id => 1, :type => "Record" }, 
@@ -110,8 +121,8 @@ describe "Solr" do
   
   describe "#indexing" do
     before(:each) do
-      Supernova::Solr.truncate!
-      Supernova::Solr.commit!
+      server.truncate
+      server.commit
     end
     
     class OfferIndex < Supernova::SolrIndexer
@@ -269,10 +280,10 @@ describe "Solr" do
       
       
       before(:each) do
-        Supernova::Solr.truncate!
-        Supernova::Solr.add(:id => "1", :location_p => inside.to_s, :type => "Test")
-        Supernova::Solr.add(:id => "2", :location_p => outside.to_s, :type => "Test")
-        Supernova::Solr.commit!
+        server.truncate
+        server.index_docs([:id => "1", :location_p => inside.to_s, :type => "Test"])
+        server.index_docs([:id => "2", :location_p => outside.to_s, :type => "Test"])
+        server.commit
       end
       
       it "the correct entries" do
@@ -299,10 +310,12 @@ describe "Solr" do
     
     describe "not searches" do
       it "finds the correct documents for not nil" do
-        Supernova::Solr.add(:id => "offers/3", :enabled_b => true, :text_t => "Marek Mintal", :popularity_i => 1, 
-          :type => "Offer"
+        server.index_docs([
+            :id => "offers/3", :enabled_b => true, :text_t => "Marek Mintal", :popularity_i => 1, 
+            :type => "Offer"
+          ]
         )
-        Supernova::Solr.commit!
+        server.commit
         raise "There should be 3 docs" if new_criteria.total_entries != 3
         new_criteria.with(:user_id_i.not => nil).map { |h| h["id"] }.should == [1, 2]
       end
@@ -377,21 +390,23 @@ describe "Solr" do
   
   describe "#facets" do
     it "returns the correct facets hash" do
-      Supernova::Solr.add(:id => "offers/3", :type => "Offer", :user_id_i => 3, :enabled_b => false, 
-        :text_t => "Hans Müller", :popularity_i => 10, :type => "Offer"
+      server.index_docs([:id => "offers/3", :type => "Offer", :user_id_i => 3, :enabled_b => false, 
+          :text_t => "Hans Müller", :popularity_i => 10, :type => "Offer"
+        ]
       )
-      Supernova::Solr.commit!
+      server.commit
       new_criteria.facet_fields(:text_t).execute.facets.should == {"text_t"=>{"mintal"=>1, "marek"=>1, "meyer"=>1, "müller"=>1, "han"=>2}}
     end
   end
   
   describe "#execute_async" do
     it "is working" do
-      Supernova::Solr.add(:id => "offers/1", :type => "Offer", :popularity_i => 1)
-      Supernova::Solr.add(:id => "offers/2", :type => "Offer", :popularity_i => 10)
-      Supernova::Solr.add(:id => "offers/3", :type => "Offer", :popularity_i => 100)
-      Supernova::Solr.commit!
-      
+      server.index_docs([
+        { :id => "offers/1", :type => "Offer", :popularity_i => 1 },
+        { :id => "offers/2", :type => "Offer", :popularity_i => 10 },
+        { :id => "offers/3", :type => "Offer", :popularity_i => 100 },
+      ])
+      server.commit
       new_criteria.select("id").execute_async do |collection|
         @collection = collection
       end
@@ -405,10 +420,14 @@ describe "Solr" do
   
   describe "#facet_queries" do
     it "returns the correct result" do
-      Supernova::Solr.add(:id => "offers/1", :type => "Offer", :popularity_i => 1)
-      Supernova::Solr.add(:id => "offers/2", :type => "Offer", :popularity_i => 10)
-      Supernova::Solr.add(:id => "offers/3", :type => "Offer", :popularity_i => 100)
-      Supernova::Solr.commit!
+      server.index_docs(
+        [
+          { :id => "offers/1", :type => "Offer", :popularity_i => 1 },
+          { :id => "offers/2", :type => "Offer", :popularity_i => 10 },
+          { :id => "offers/3", :type => "Offer", :popularity_i => 100 },
+        ]
+      )
+      server.commit
       col = new_criteria.facet_queries(:one => "popularity_i:[* TO 1]", :ten => "popularity_i:[* TO 10]", :hundred => "popularity_i:[* TO 100]").execute
       col.facet_queries.should == { :one => 1, :ten => 2, :hundred => 3 }
     end
@@ -468,23 +487,23 @@ describe "Solr" do
     
     describe "#nin and in" do
       before(:each) do
-        row1 = { "id" => 1, "location" => "Hamburg", "type" => "Offer" }
-        row2 = { "id" => 2, "location" => "Hamburg", "type" => "Offer" }
-        row3 = { "id" => 3, "location" => "Berlin", "type" => "Offer" }
-        row4 = { "id" => 4, "location" => "München", "type" => "Offer" }
-        Supernova::Solr.truncate!
-        Supernova::Solr.commit!
-        @clazz.new.index_rows([row1, row2, row3, row4])
+        row1 = { "id" => 1, "location_s" => "Hamburg", "type" => "Offer" }
+        row2 = { "id" => 2, "location_s" => "Hamburg", "type" => "Offer" }
+        row3 = { "id" => 3, "location_s" => "Berlin", "type" => "Offer" }
+        row4 = { "id" => 4, "location_s" => "München", "type" => "Offer" }
+        server.truncate
+        server.index_docs([row1, row2, row3, row4])
+        server.commit
       end
       
       it "correctly handels nin searches" do
-        @clazz.with(:location.in => %w(Hamburg)).execute.map(&:id).should == [1, 2]
-        @clazz.with(:location.in => %w(Hamburg Berlin)).execute.map(&:id).should == [1, 2, 3]
+        @clazz.with(:location_s.in => %w(Hamburg)).execute.map(&:id).should == [1, 2]
+        @clazz.with(:location_s.in => %w(Hamburg Berlin)).execute.map(&:id).should == [1, 2, 3]
       end
       
       it "correctly handels nin queries" do
-        @clazz.with(:location.nin => %w(Hamburg)).execute.map(&:id).should == [3, 4]
-        @clazz.with(:location.nin => %w(Hamburg Berlin)).execute.map(&:id).should == [4]
+        @clazz.with(:location_s.nin => %w(Hamburg)).execute.map(&:id).should == [3, 4]
+        @clazz.with(:location_s.nin => %w(Hamburg Berlin)).execute.map(&:id).should == [4]
       end
     end
   end
