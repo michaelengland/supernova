@@ -26,14 +26,6 @@ describe "Supernova::SolrCriteria" do
       Supernova::Solr.url = "rgne"
       Supernova::SolrCriteria.new.solr_url.should == "rgne"
     end
-
-    it "returns the correct select_url" do
-      crit = Supernova::SolrCriteria.new
-      Supernova::Solr.url = "rgne"
-      crit.select_url.should == "rgne/select"
-      crit.solr_url = "/path/to/solr"
-      crit.select_url.should == "/path/to/solr/select"
-    end
   end
   
   describe "#where" do

@@ -12,8 +12,8 @@ module Supernova::Solr
       url.gsub(/[\/]+$/, "")
     end
     
-    def select_url
-      "#{url}/select"
+    def server
+      @server ||= Supernova::Solr::Server.new(url)
     end
   end
   

@@ -10,10 +10,6 @@ class Supernova::SolrCriteria < Supernova::Criteria
     @solr_url || Supernova::Solr.url
   end
 
-  def select_url
-    "#{solr_url}/select"
-  end
-
   def geo_circle_from_with
     geo_filter_in_with.at(1) if geo_filter_in_with
   end

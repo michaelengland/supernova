@@ -92,7 +92,7 @@ describe "Solr" do
           { :title_s => "Title2", :id => 2, :type => "Record" } 
         ]
       )
-      response = JSON.parse(Typhoeus::Request.post(Supernova::Solr.select_url, :params => { :q=>'*:*', :start=>0, :rows=>10, :sort => "id asc", :wt => "json" }).body)
+      response = JSON.parse(Typhoeus::Request.post(Supernova::Solr.url + "/select", :params => { :q=>'*:*', :start=>0, :rows=>10, :sort => "id asc", :wt => "json" }).body)
       response["response"]["docs"].first.should == { "title_s" => "Title1", "id" => "1", "type" => "Record" }
       response["response"]["docs"].at(1).should == { "title_s" => "Title2", "id" => "2", "type" => "Record" }
     end
