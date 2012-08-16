@@ -51,13 +51,17 @@ class Supernova::Solr::Server
   end
 
   def post_update(body, commit = false)
-    the_url = "#{url}/update/json"
-    if commit.is_a?(Numeric)
-      the_url << "?commitWithin=#{commit}" 
-    elsif commit
-      the_url << "?commit=true" 
-    end
-    http_request(:post, the_url, :headers => { "Content-Type" => "application/json" }, :body => body)
+    http_request(:post, update_url_with_commit(commit), :headers => { "Content-Type" => "application/json" }, :body => body)
+  end
+
+  def update_url_with_commit(commit = false)
+    return "#{update_url}?commitWithin=#{commit}" if commit.is_a?(Numeric)
+    return "#{update_url}?commit=true" if commit == true
+    update_url
+  end
+
+  def update_url
+    "#{url}/update/json"
   end
 
   def http_request(method, url, attributes = {})
