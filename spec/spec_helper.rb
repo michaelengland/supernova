@@ -21,11 +21,17 @@ end
 # in ./support/ and its subdirectories.
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
+require "webmock/rspec"
+
+SOLR_URL = "http://localhost:8985/solr/supernova_test" 
+
 RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
   config.treat_symbols_as_metadata_keys_with_true_values = true
   config.before(:each) do
     Supernova::Criteria.mutable_by_default!
+    Supernova.logger = nil
+    Supernova::Solr.url = SOLR_URL
   end
 
   config.after(:each) do

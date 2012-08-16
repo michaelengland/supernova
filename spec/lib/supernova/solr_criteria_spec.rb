@@ -395,20 +395,15 @@ describe "Supernova::SolrCriteria" do
 
   describe "#execute" do
     let(:params) { {} }
-    let(:response) { double("response", :body => solr_response.to_json) }
     
     before(:each) do
-      criteria.stub(:typhoeus_response).and_return(response)
       criteria.stub(:to_params).and_return params
+      stub_request(:get, "http://localhost:8985/solr/supernova_test/select?q=*:*&wt=json").
+        to_return(:status => 200, :body => solr_response.to_json, :headers => {})
     end
     
     it "sets the original response" do
       criteria.execute.original_response.should == solr_response
-    end
-    
-    it "calls to_params" do
-      criteria.should_receive(:typhoeus_response).and_return response
-      criteria.execute
     end
     
     it "returns a Supernova::Collection" do
@@ -454,72 +449,22 @@ describe "Supernova::SolrCriteria" do
     end
     
     it "sets the correct facets" do
-      response.stub!(:body).and_return(facet_response.to_json)
+      stub_request(:get, "http://localhost:8985/solr/supernova_test/select?q=*:*&wt=json").
+        to_return(:status => 200, :body => facet_response.to_json, :headers => {})
       criteria.should_receive(:hashify_facets_from_response).with(facet_response).and_return({ :a => 1 })
       criteria.execute.facets.should == {:a => 1}
     end
   end
   
-  describe "#typhoeus_response" do
-    it "returns the response" do
-      response = double("response", :time => 11.0)
-      request = double("request", :response => response, :on_complete => nil)
-      Typhoeus::Hydra.hydra.should_receive(:queue).with(request)
-      Typhoeus::Hydra.hydra.should_receive(:run)
-      criteria.stub!(:typhoeus_request).and_return(request)
-      criteria.typhoeus_response.should == response
-    end
-  end
-  
   describe "#execute_async" do
-    let(:request) { double("request") }
-    let(:response) { double("response", :body => solr_response.to_json) }
-    let(:hydra) { double("hydra", :queue => nil) }
-    
-    before(:each) do
-      request.should_receive(:on_complete).and_yield(response)
-      criteria.stub!(:typhoeus_request).and_return(request)
-      criteria.stub!(:hydra).and_return(hydra)
-    end
-    
     it "yields the parsed collection" do
-      criteria.execute_async do |collection|
+      stub_request(:get, "http://localhost:8985/solr/supernova_test/select?fl=id&q=*:*&wt=json").
+         to_return(:status => 200, :body => solr_response.to_json, :headers => {})
+      criteria.select("id").execute_async do |collection|
         @collection = collection
       end
+      criteria.server.run
       @collection.should be_kind_of(Supernova::Collection)
-    end
-    
-    it "adds the request to hydra" do
-      hydra.should_receive(:queue).with(request)
-      criteria.execute_async do |collection|
-        collection
-      end
-    end
-  end
-  
-  it "returns the parsed response body" do
-    response = double("response", :body => facet_response.to_json)
-    criteria.stub!(:typhoeus_response).and_return(response)
-    criteria.execute.original_response.should == facet_response
-  end
-  
-  describe "#typhoeus_request" do
-    it "returns a Typhoeus::Request" do
-      criteria.typhoeus_request.should be_kind_of(Typhoeus::Request)
-    end
-    
-    it "sets the correct url" do
-      criteria.stub(:select_url).and_return("my_select_url")
-      criteria.typhoeus_request.url.should == "my_select_url?q=%2A%3A%2A&wt=json"
-    end
-    
-    it "returns the correct params" do
-      criteria.stub(:to_params).and_return(:a => 1)
-      criteria.typhoeus_request.params.should == { :a => 1, :wt => "json"}
-    end
-    
-    it "returns the correct request methods" do
-      criteria.typhoeus_request.method.should == :get
     end
   end
   

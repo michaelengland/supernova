@@ -1,4 +1,5 @@
 # -*- encoding : utf-8 -*-
+require "supernova/solr/server"
 
 class Supernova::SolrCriteria < Supernova::Criteria
   DEFAULT_Q = "*:*"
@@ -291,50 +292,13 @@ class Supernova::SolrCriteria < Supernova::Criteria
     end
   end
   
-  def typhoeus_response
-    request = typhoeus_request
-    request.on_complete do |response|
-      log_typhoeus_response(response)
-    end
-    hydra.queue(request)
-    hydra.run
-    request.response
-  end
-  
-  def hydra
-    Typhoeus::Hydra.hydra
-  end
-
-  def qtime_from_body(body)
-    if qtime_s = body[/"QTime":(\d+)/, 1]
-      qtime_s.to_i
-    end
-  end
-
-  def log_typhoeus_response(response)
-    if Supernova.logger
-      to_log = { :params => response.request.params, :host => response.request.host, :qtime => qtime_from_body(response.body) }
-      Supernova.logger.info("SUPERNOVA SOLR REQUEST: #{to_log.to_json} finished in #{response.time}")
-    end
-  end
-  
-  def typhoeus_request
-    Typhoeus::Request.new(select_url, :params => to_params.merge(:wt => "json"), :method => :get)
-  end
-  
   def execute
-    collection_from_body(typhoeus_response.body)
-  end
-  
-  def collection_from_body(body)
-    collection_from_json(parse_json(body))
-  end
-
-  def parse_json(body)
-    JSON.parse(body)
-  rescue => err
-    puts "ERROR: #{err.class} unable to parse #{body.inspect}"
-    raise err
+    response = nil
+    execute_async do |the_response|
+      response = the_response
+    end
+    server.run
+    response
   end
   
   def collection_from_json(json)
@@ -345,14 +309,15 @@ class Supernova::SolrCriteria < Supernova::Criteria
     collection.replace(build_docs(json["response"]["docs"]))
     collection
   end
+
+  def server
+    @server ||= Supernova::Solr::Server.new(Supernova::Solr.url)
+  end
   
   def execute_async(&block)
-    request = typhoeus_request
-    request.on_complete do |response|
-      log_typhoeus_response(response)
-      block.call(collection_from_body(response.body))
+    server.select_async(to_params) do |json|
+      yield(collection_from_json(json))
     end
-    hydra.queue(request)
   end
   
   def only_ids

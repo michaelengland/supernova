@@ -4,8 +4,7 @@ require "webmock/rspec"
 require "supernova/solr/server"
 
 describe "Solr" do
-  let(:url) { "http://localhost:8985/solr/supernova_test" }
-  
+  let(:url) { SOLR_URL }
   let(:server) { Supernova::Solr::Server.new(url) }
   
   before(:each) do
@@ -81,26 +80,6 @@ describe "Solr" do
           { :title_s => "Title2", :id => 2, :type => "Record" } 
         ]
       )
-    end
-
-    it "should log all queries when logger set" do
-      Supernova::SolrCriteria.where(:id => 1).only_ids.typhoeus_response
-      logs = logger.logs
-      logs.count.should == 1
-      logs.first.first.should match(/SUPERNOVA SOLR REQUEST.*finished in/)
-    end
-
-    it "also logs when using execute_async" do
-      crit = Supernova::SolrCriteria.where(:id => 1).only_ids
-      response = nil
-      crit.execute_async do |result|
-        response = result
-      end
-      new_criteria.hydra.run
-      response.should == [{"id"=>"1"}]
-      logs = logger.logs
-      logs.count.should == 1
-      logs.first.first.should match(/SUPERNOVA SOLR REQUEST.*finished in/)
     end
   end
   
@@ -410,7 +389,7 @@ describe "Solr" do
       new_criteria.select("id").execute_async do |collection|
         @collection = collection
       end
-      new_criteria.hydra.run
+      new_criteria.server.run
 
       @collection.should be_kind_of(Supernova::Collection)
       @collection.count.should == 3
@@ -430,22 +409,6 @@ describe "Solr" do
       server.commit
       col = new_criteria.facet_queries(:one => "popularity_i:[* TO 1]", :ten => "popularity_i:[* TO 10]", :hundred => "popularity_i:[* TO 100]").execute
       col.facet_queries.should == { :one => 1, :ten => 2, :hundred => 3 }
-    end
-  end
-  
-  describe "#typhoeus_response" do
-    let(:response) { JSON.parse(new_criteria.typhoeus_response.body) }
-    
-    it "returns a hash" do
-      response.should be_kind_of(Hash)
-    end
-    
-    it "should not be empty" do
-      response.keys.should_not be_empty
-    end
-    
-    it "includes th ecorrect headers" do
-      response.keys.sort.should == %w(responseHeader response).sort
     end
   end
   

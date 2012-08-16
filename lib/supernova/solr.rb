@@ -1,5 +1,3 @@
-require "supernova/solr_criteria"
-
 module Supernova::Solr
   class << self
     attr_accessor :url
@@ -25,4 +23,5 @@ module Supernova::Solr
   end
 end
 
+require "supernova/solr_criteria"
 require "supernova/solr_indexer"

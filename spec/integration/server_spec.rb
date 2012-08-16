@@ -39,4 +39,22 @@ describe "Server Integration Spec" do
     a.fetch("response").fetch("docs").should == [{ "id" => "1", "type" => "Person" }]
     b.fetch("response").fetch("docs").should == [{ "id" => "2", "type" => "Person" }]
   end
+
+  class MyLogger
+    def info(message)
+      logs << message
+    end
+
+    def logs
+      @logs ||= []
+    end
+  end
+
+  it "logs all calls" do
+    logger = MyLogger.new
+    Supernova.logger = logger
+    server.select
+    logger.logs.count.should == 1
+    logger.logs.first.should include("SUPERNOVA SOLR REQUEST")
+  end
 end
