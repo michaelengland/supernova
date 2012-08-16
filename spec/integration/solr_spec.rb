@@ -152,8 +152,11 @@ describe "Solr" do
         
         clazz Offer
         
-        def extra_attributes_from_record(record)
-          { :upcased_text => record.text.to_s.upcase.presence }
+        def before_index(row)
+          if text = row["text"]
+            row["upcased_text"] = text.to_s.upcase.presence
+          end
+          row
         end
       end
       

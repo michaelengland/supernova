@@ -151,29 +151,10 @@ describe Supernova::SolrIndexer do
       indexer.stub!(:puts)
     end
     
-    it "calls row_to_solr" do
-      indexer.should_not_receive(:before_index)
-      indexer.should_receive(:row_to_solr).with(row).and_return row
-      indexer.map_for_solr(row)
-    end
-    
-    it "prints a deprecation warning when using row_to_solr" do
-      indexer.stub!(:row_to_solr).with(row).and_return row
-      indexer.should_receive(:puts).with(/DEPRECATION WARNING: use before_index instead of row_to_solr! in/)
-      indexer.map_for_solr(row)
-    end
-    
     it "calls before_index when row_to_solr is not defined" do
       row = { "a" => 1 }
       indexer.should_receive(:before_index).with(row).and_return row
       indexer.map_for_solr(row)
-    end
-    
-    it "calls map_hash_keys_to_solr with result of row_to_solr" do
-      dummy_row = double("dummy row")
-      indexer.stub!(:row_to_solr).and_return dummy_row
-      indexer.should_receive(:map_hash_keys_to_solr).with(dummy_row)
-      indexer.map_for_solr({ "a" => 1 })
     end
     
     describe "with the index defining extra_attributes_from_record" do
@@ -190,20 +171,9 @@ describe Supernova::SolrIndexer do
         end
       end
       
-      it "calls Supernova.build_ar_like_record with correct parameters" do
-        Supernova.should_receive(:build_ar_like_record).and_return offer_double
-        SolrOfferIndex.new("offer_id" => 77, "type" => "Offer").map_for_solr(row)
-      end
-      
       it "includes the original attributes" do
         index = SolrOfferIndex.new
         index.map_for_solr({ "a" => 2 })["a"].should == 2
-      end
-      
-      it "includes the attributes from extra_attributes_from_record" do
-        index = SolrOfferIndex.new
-        index.map_for_solr({ "a" => 2, "id" => "88" })["offer_code"].should == "OFFER_88"
-        hash = { :a => 1, "a" => 2 }
       end
     end
   end
