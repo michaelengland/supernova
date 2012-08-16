@@ -1,3 +1,6 @@
 root = File.expand_path("..", __FILE__)
-cmd = "cd /usr/local/Cellar/solr/3.1.0/libexec/example/ && java -Dsolr.data.dir=#{root}/data -Dsolr.solr.home=#{root} -Djetty.port=8985 -jar start.jar > #{File.expand_path("../log/solr.log", root)} 2>&1 &"
-system(cmd)
+jar_path = ENV["SOLR_JAR_PATH"] || "/usr/local/Cellar/solr/3.6.1/libexec/example/start.jar"
+
+Dir.chdir(File.dirname(jar_path)) do
+  exec "java -Dsolr.data.dir=#{root}/data -Dsolr.solr.home=#{root} -Djetty.port=8985 -jar #{File.basename(jar_path)}"
+end
