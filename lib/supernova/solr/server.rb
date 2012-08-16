@@ -12,11 +12,22 @@ class Supernova::Solr::Server
   }
 
   def core_names
-    parse_json(http_request(:get, "#{url}/admin/cores?action=STATUS&wt=json").body)["status"].keys
+    parse_json(http_request_sync(:get, "#{url}/admin/cores?action=STATUS&wt=json").body)["status"].keys
   end
 
   def select(params = {})
-    parse_json(select_raw(params).body)
+    response = nil
+    select_async(params) do |the_response|
+      response = the_response
+    end
+    run
+    response
+  end
+
+  def select_async(params = {}, &block)
+    http_request_async(:get, "#{url}/select", :params => DEFAULT_PARAMS.merge(params)) do |response|
+      yield(parse_json(response.body))
+    end
   end
 
   def index_docs(docs, commit = false)
@@ -40,6 +51,10 @@ class Supernova::Solr::Server
     delete_by_query("*:*", commit)
   end
 
+  def run
+    hydra.run
+  end
+
   private
 
   def parse_json(raw)
@@ -47,11 +62,11 @@ class Supernova::Solr::Server
   end
 
   def select_raw(params = {})
-    http_request(:get, "#{url}/select", :params => DEFAULT_PARAMS.merge(params))
+    http_request_sync(:get, "#{url}/select", :params => DEFAULT_PARAMS.merge(params))
   end
 
   def post_update(body, commit = false)
-    http_request(:post, update_url_with_commit(commit), :headers => { "Content-Type" => "application/json" }, :body => body)
+    http_request_sync(:post, update_url_with_commit(commit), :headers => { "Content-Type" => "application/json" }, :body => body)
   end
 
   def update_url_with_commit(commit = false)
@@ -64,11 +79,19 @@ class Supernova::Solr::Server
     "#{url}/update/json"
   end
 
-  def http_request(method, url, attributes = {})
-    request = Typhoeus::Request.new(url, attributes.merge(method: method))
-    hydra.queue(request)
-    hydra.run
+  def http_request_sync(method, url, attributes = {})
+    request = http_request_async(method, url, attributes)
+    run
     request.response
+  end
+
+  def http_request_async(method, url, attributes = {}, &block)
+    request = Typhoeus::Request.new(url, attributes.merge(method: method))
+    request.on_complete do |response|
+      yield(response) if block_given?
+    end
+    hydra.queue(request)
+    request
   end
 
   def hydra
