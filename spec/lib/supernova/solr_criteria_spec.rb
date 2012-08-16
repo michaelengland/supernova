@@ -434,20 +434,6 @@ describe "Supernova::SolrCriteria" do
       criteria.paginate(:page => 2, :per_page => 10).execute.total_entries.should == 2
     end
     
-    it "calls build_docs with returned docs" do
-      criteria.should_receive(:build_docs).with(docs).and_return []
-      criteria.execute
-    end
-    
-    it "calls replace on collection with returned docs" do
-      col = Supernova::Collection.new(1, 1, 10)
-      Supernova::Collection.stub!(:new).and_return col
-      built_docs = double("built docs")
-      criteria.stub!(:build_docs).and_return built_docs
-      col.should_receive(:replace).with(built_docs)
-      criteria.execute
-    end
-    
     it "sets the correct facets" do
       stub_request(:get, "http://localhost:8985/solr/supernova_test/select?q=*:*&wt=json").
         to_return(:status => 200, :body => facet_response.to_json, :headers => {})
@@ -486,111 +472,6 @@ describe "Supernova::SolrCriteria" do
     end
   end
   
-  describe "#build_docs" do
-    it "returns an array" do
-      criteria.build_docs([]).should == []
-    end
-    
-    it "returns the correct amount of docs" do
-      criteria.build_docs(docs).length.should == 2
-    end
-    
-    it "returns the correct classes" do
-      docs = [ { "id" => "hosts/7", "type" => "Host" }, { "id" => "offers/1", "type" => "Offer" }]
-      criteria.build_docs(docs).map(&:class).should == [Host, Offer]
-    end
-    
-    it "calls build_doc on all returnd docs" do
-      doc1 = double("doc1")
-      doc2 = double("doc2")
-      docs = [doc1, doc2]
-      criteria.should_receive(:build_doc).with(doc1)
-      criteria.should_receive(:build_doc).with(doc2)
-      criteria.build_docs(docs)
-    end
-    
-    it "uses a custom mapper when build_doc_method is set" do
-      doc1 = { "a" => 1 }
-      meth = lambda { |row| row.to_a }
-      criteria.build_doc_method(meth).build_docs([doc1]).should == [[["a", 1]]]
-    end
-  end
-  
-  describe "#build_doc" do
-    class OfferIndex < Supernova::SolrIndexer
-      has :enabled, :type => :boolean
-      has :popularity, :type => :integer
-      has :is_deleted, :type => :boolean, :virtual => true
-      clazz Offer
-    end
-    
-    
-    { "Offer" => Offer, "Host" => Host }.each do |type, clazz|
-      it "returns the #{clazz} for #{type.inspect}" do
-        criteria.build_doc("type" => type).should be_an_instance_of(clazz)
-      end
-    end
-    
-    it "calls convert_doc_attributes" do
-      row = { "type" => "Offer", "id" => "offers/1" }
-      criteria.should_receive(:convert_doc_attributes).with(row).and_return row
-      criteria.build_doc(row)
-    end
-    
-    it "returns the original hash when no type given" do
-      type = double("type")
-      row = { "id" => "offers/1", "type" => type }
-      type.should_receive(:respond_to?).with(:constantize).and_return false
-      criteria.should_not_receive(:convert_doc_attributes)
-      criteria.build_doc(row).should == row
-    end
-    
-    it "assigns the attributes returned from convert_doc_attributes to attributes when record responds to attributes=" do
-      atts = { :title => "Hello" }
-      row = { "type" => "Offer" }
-      criteria.should_receive(:convert_doc_attributes).with(row).and_return atts
-      doc = criteria.build_doc(row)
-      doc.instance_variable_get("@attributes").should == atts
-    end
-    
-    it "sets the original original_search_doc" do
-      original_search_doc = { "type" => "Offer", "id" => "offers/id" }
-      criteria.build_doc(original_search_doc).instance_variable_get("@original_search_doc").should == original_search_doc
-    end
-    
-    it "should be readonly" do
-      criteria.build_doc(docs.first).should be_readonly
-    end
-    
-    it "should not be a new record" do
-      criteria.build_doc(docs.first).should_not be_a_new_record
-    end
-    
-    it "returns an offer and sets all given parameters" do
-      criteria.attribute_mapping(:enabled => { :type => :boolean }, :popularity => { :type => :integer })
-      doc = criteria.build_doc("type" => "Offer", "id" => "offers/1", "enabled_b" => true, "popularity_i" => 10)
-      doc.should be_an_instance_of(Offer)
-      doc.popularity.should == 10
-    end
-    
-    it "sets selected parameters even when nil" do
-      doc = criteria.select(:enabled, :popularity).build_doc("type" => "Offer", "id" => "offers/1")
-      doc.enabled.should be_nil
-      doc.popularity.should be_nil
-    end
-    
-    it "it sets parameters to nil when no select given and not present" do
-      doc = OfferIndex.search_scope.build_doc("type" => "Offer", "id" => "offers/1")
-      doc.should be_an_instance_of(Offer)
-      doc.popularity.should be_nil
-    end
-    
-    it "does not set virtual parameters to nil" do
-      OfferIndex.search_scope.build_doc("type" => "Offer", "id" => "offers/1").attributes.should_not have_key(:is_deleted)
-      OfferIndex.search_scope.build_doc("type" => "Offer", "id" => "offers/1").attributes.should_not have_key("is_deleted")
-    end
-  end
-  
   describe "#select_fields" do
     it "returns the fields from search_options when defined" do
       criteria.select(:enabled).select_fields.should == [:enabled]
@@ -605,30 +486,6 @@ describe "Supernova::SolrCriteria" do
     
     it "returns an empty array by default" do
       criteria.select_fields.should be_empty
-    end
-  end
-  
-  describe "#convert_doc_attributes" do
-    { "popularity" => 10, "enabled" => false, "id" => "1" }.each do |key, value|
-      it "sets #{key} to #{value}" do
-        criteria.convert_doc_attributes("type" => "Offer", "some_other" => "Test", "id" => "offers/1", "enabled" => false, "popularity" => 10)[key].should == value
-      end
-    end
-    
-    { "popularity" => 10, "enabled" => true, "id" => "1" }.each do |field, value|
-      it "uses sets #{field} to #{value}" do
-        criteria.attribute_mapping(:enabled => { :type => :boolean }, :popularity => { :type => :integer })
-        criteria.convert_doc_attributes("type" => "Offer", "id" => "offers/1", "enabled_b" => true, "popularity_i" => 10)[field].should == value
-      end
-    end
-  
-    
-    class MongoOffer
-      attr_accessor :id
-    end
-    
-    it "would also work with mongoid ids" do
-      criteria.convert_doc_attributes("type" => "MongoOffer", "id" => "offers/4df08c30f3b0a72e7c227a55")["id"].should == "4df08c30f3b0a72e7c227a55"
     end
   end
   

@@ -227,40 +227,6 @@ class Supernova::SolrCriteria < Supernova::Criteria
     end
   end
   
-  def build_docs(docs)
-    docs.map do |hash|
-      self.search_options[:build_doc_method] ? self.search_options[:build_doc_method].call(hash) : build_doc(hash)
-    end
-  end
-  
-  def build_doc_method(method)
-    merge_search_options :build_doc_method, method
-  end
-  
-  def build_doc(hash)
-    if hash["type"].respond_to?(:constantize)
-      Supernova.build_ar_like_record(hash["type"].constantize, convert_doc_attributes(hash), hash)
-    else
-      hash
-    end
-  end
-  
-  # called in build doc, all hashes have strings as keys!!!
-  def convert_doc_attributes(hash)
-    converted_hash = hash.inject({}) do |ret, (key, value)|
-      if key == "id"
-        ret["id"] = value.to_s.split("/").last
-      else
-        ret[reverse_lookup_solr_field(key).to_s] = value
-      end
-      ret
-    end
-    self.select_fields.each do |select_field|
-      converted_hash[select_field.to_s] = nil if !converted_hash.has_key?(select_field.to_s)
-    end
-    converted_hash
-  end
-  
   def select_fields
     if self.search_options[:select].present?
       self.search_options[:select]
@@ -306,7 +272,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
     collection.original_criteria = self.clone
     collection.original_response = json
     collection.facets = hashify_facets_from_response(json)
-    collection.replace(build_docs(json["response"]["docs"]))
+    collection.replace(json["response"]["docs"])
     collection
   end
 
