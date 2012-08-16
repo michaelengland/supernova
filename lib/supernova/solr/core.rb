@@ -29,6 +29,6 @@ class Supernova::Solr::Core < Supernova::Solr::Server
   private
 
   def admin_action(action, attributes)
-    http_get("#{solr_url}/admin/cores?action=#{action}&#{attributes}&wt=json")
+    http_request_sync(:get, "#{solr_url}/admin/cores?action=#{action}&#{attributes}&wt=json")
   end
 end

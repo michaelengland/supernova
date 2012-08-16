@@ -73,7 +73,7 @@ describe "Supernova::Solr::Server" do
     body = { "a" => 1 }.to_json
     stub_request(:get, "http://path.to.solr:112/select?q=*:*&wt=json")
       .to_return(:status => 200, :body => body, :headers => {})
-    Supernova::Solr::Server.new("http://path.to.solr:112").select.should == { "a" => 1 }
+    server.select.should == { "a" => 1 }
   end
 
   it "calls the commit statement" do

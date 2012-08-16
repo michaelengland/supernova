@@ -12,32 +12,28 @@ class Supernova::Solr::Server
   }
 
   def core_names
-    JSON.parse(http_get("#{url}/admin/cores?action=STATUS&wt=json").body)["status"].keys
+    JSON.parse(http_request(:get, "#{url}/admin/cores?action=STATUS&wt=json").body)["status"].keys
   end
 
   def index_docs(docs, commit = false)
     body = docs.map { |doc| %({"add":) + { :doc => doc }.to_json + "}" }.join("\n")
-    post_update(url, body, commit)
+    post_update(body, commit)
   end
 
   def select(params = {})
     JSON.parse(select_raw(params).body)
   end
 
-  def select_raw(params = {})
-    get(url, "select", :params => DEFAULT_PARAMS.merge(params))
-  end
-
   def commit
-    post_update(url, { "commit" => {} }.to_json)
+    post_update({ "commit" => {} }.to_json)
   end
 
   def optimize
-    post_update(url, { "optimize" => {} }.to_json)
+    post_update({ "optimize" => {} }.to_json)
   end
 
   def delete_by_query(query, commit = false)
-    post_update(url, { "delete" => { "query" => query }}.to_json, commit)
+    post_update({ "delete" => { "query" => query }}.to_json, commit)
   end
 
   def truncate(commit = false)
@@ -46,21 +42,28 @@ class Supernova::Solr::Server
 
   private
 
-  def get(solr_url, relative_path, attributes = {})
-    http_get("#{solr_url}/#{relative_path}", attributes)
+  def select_raw(params = {})
+    http_request(:get, "#{url}/select", :params => DEFAULT_PARAMS.merge(params))
   end
 
-  def post_update(core_url, body, commit = false)
-    url = "#{core_url}/update/json"
+  def post_update(body, commit = false)
+    the_url = "#{url}/update/json"
     if commit.is_a?(Numeric)
-      url << "?commitWithin=#{commit}" 
+      the_url << "?commitWithin=#{commit}" 
     elsif commit
-      url << "?commit=true" 
+      the_url << "?commit=true" 
     end
-    Typhoeus::Request.post(url, :headers => { "Content-Type" => "application/json" }, :body => body)
+    http_request(:post, the_url, :headers => { "Content-Type" => "application/json" }, :body => body)
   end
 
-  def http_get(url, attributes = {})
-    Typhoeus::Request.get(url, attributes)
+  def http_request(method, url, attributes = {})
+    request = Typhoeus::Request.new(url, attributes.merge(method: method))
+    hydra.queue(request)
+    hydra.run
+    request.response
+  end
+
+  def hydra
+    Typhoeus::Hydra.hydra
   end
 end
