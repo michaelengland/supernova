@@ -12,16 +12,16 @@ class Supernova::Solr::Server
   }
 
   def core_names
-    JSON.parse(http_request(:get, "#{url}/admin/cores?action=STATUS&wt=json").body)["status"].keys
+    parse_json(http_request(:get, "#{url}/admin/cores?action=STATUS&wt=json").body)["status"].keys
+  end
+
+  def select(params = {})
+    parse_json(select_raw(params).body)
   end
 
   def index_docs(docs, commit = false)
     body = docs.map { |doc| %({"add":) + { :doc => doc }.to_json + "}" }.join("\n")
     post_update(body, commit)
-  end
-
-  def select(params = {})
-    JSON.parse(select_raw(params).body)
   end
 
   def commit
@@ -41,6 +41,10 @@ class Supernova::Solr::Server
   end
 
   private
+
+  def parse_json(raw)
+    JSON.parse(raw)
+  end
 
   def select_raw(params = {})
     http_request(:get, "#{url}/select", :params => DEFAULT_PARAMS.merge(params))
