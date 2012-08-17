@@ -32,6 +32,7 @@ RSpec.configure do |config|
     Supernova::Criteria.mutable_by_default!
     Supernova.logger = nil
     Supernova::Solr.url = SOLR_URL
+    Supernova::Solr.read_url = nil
   end
 
   config.after(:each) do

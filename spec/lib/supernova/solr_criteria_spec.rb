@@ -15,6 +15,19 @@ describe "Supernova::SolrCriteria" do
     }
   end
 
+  describe "server" do
+    it "uses the read_url when set" do
+      Supernova::Solr.read_url = "my_url"
+      criteria.server.url.should == "my_url"
+    end
+
+    it "uses the global url when " do
+      Supernova::Solr.read_url = nil
+      Supernova::Solr.url = "default_url"
+      criteria.server.url.should == "default_url"
+    end
+  end
+
   describe "with custom url" do
     it "allows setting a solr_url" do
       criteria = Supernova::SolrCriteria.new

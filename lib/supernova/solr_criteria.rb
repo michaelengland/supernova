@@ -273,7 +273,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
   end
 
   def server
-    @server ||= Supernova::Solr::Server.new(Supernova::Solr.url)
+    @server ||= Supernova::Solr::Server.new(Supernova::Solr.read_url || Supernova::Solr.url)
   end
   
   def execute_async(&block)
