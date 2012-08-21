@@ -4,8 +4,8 @@ require File.expand_path('../lib/supernova/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.authors       = ["Tobias Schwab"]
   gem.email         = ["tobias.schwab@dynport.de"]
-  gem.description   = %q{TODO: Write a gem description}
-  gem.summary       = %q{TODO: Write a gem summary}
+  gem.description   = %q{Supernova}
+  gem.summary       = %q{Yet another SOLR library.}
   gem.homepage      = ""
 
   gem.files         = `git ls-files`.split($\)
