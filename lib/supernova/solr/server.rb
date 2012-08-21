@@ -53,11 +53,13 @@ class Supernova::Solr::Server
   end
 
   def run
-    hydra.run
+    ActiveSupport::Notifications.instrument("solr.run", requests_count: @requests_count.to_i) do
+      hydra.run
+    end
+    @requests_count = nil
   end
 
   private
-
   def parse_json(raw)
     JSON.parse(raw)
   end
@@ -90,9 +92,14 @@ class Supernova::Solr::Server
     request = Typhoeus::Request.new(url, attributes.merge(method: method))
     request.on_complete do |response|
       log_typhoeus_response(response)
+      ActiveSupport::Notifications.instrument("solr.request", time: response.time, params: response.request.params, method: response.request.method, 
+        host: response.request.host
+      )
       yield(response) if block_given?
     end
     hydra.queue(request)
+    @requests_count ||= 0
+    @requests_count += 1
     request
   end
 
