@@ -14,10 +14,10 @@ Gem::Specification.new do |gem|
   gem.name          = "supernova"
   gem.require_paths = ["lib"]
   gem.add_runtime_dependency("typhoeus")
-  gem.add_runtime_dependency("active_support")
+  gem.add_runtime_dependency("activesupport",">=3.0.0")
   gem.add_runtime_dependency("will_paginate")
   gem.add_runtime_dependency("json")
-  gem.add_development_dependency('activerecord')
+  gem.add_development_dependency('activerecord', ">=3.0.0")
   gem.add_development_dependency("mysql2")
   gem.add_development_dependency("debugger")
   gem.add_development_dependency("geokit")

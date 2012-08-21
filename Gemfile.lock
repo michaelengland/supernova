@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     supernova (0.0.1)
-      active_support
+      activesupport (>= 3.0.0)
       json
       typhoeus
       will_paginate
@@ -10,8 +10,6 @@ PATH
 GEM
   remote: https://rubygems.org/
   specs:
-    active_support (3.0.0)
-      activesupport (= 3.0.0)
     activemodel (3.0.0)
       activesupport (= 3.0.0)
       builder (~> 2.1.2)
@@ -82,7 +80,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
-  activerecord
+  activerecord (>= 3.0.0)
   debugger
   foreman
   geokit
