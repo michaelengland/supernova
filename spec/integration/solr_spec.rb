@@ -96,6 +96,21 @@ describe "Solr" do
       response["response"]["docs"].first.should == { "title_s" => "Title1", "id" => "1", "type" => "Record" }
       response["response"]["docs"].at(1).should == { "title_s" => "Title2", "id" => "2", "type" => "Record" }
     end
+
+    it "commits when commit_within is set", :wip do
+      server.truncate
+      server.commit
+      indexer = Supernova::SolrIndexer.new(commit_within: 1000)
+      indexer.index_with_json_string([
+          { :title_s => "Title1", :id => 1, :type => "Record" }, 
+          { :title_s => "Title2", :id => 2, :type => "Record" } 
+        ]
+      )
+      sleep 2
+      response = JSON.parse(Typhoeus::Request.post(Supernova::Solr.url + "/select", :params => { :q=>'*:*', :start=>0, :rows=>10, :sort => "id asc", :wt => "json" }).body)
+      response["response"]["docs"].first.should == { "title_s" => "Title1", "id" => "1", "type" => "Record" }
+      response["response"]["docs"].at(1).should == { "title_s" => "Title2", "id" => "2", "type" => "Record" }
+    end
   end
   
   describe "#indexing" do

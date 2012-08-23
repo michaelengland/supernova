@@ -75,6 +75,13 @@ describe Supernova::SolrIndexer do
       Typhoeus::Request.should_receive(:post).with("http://solr.xx:9333/solr/update/json?commit=true", :body => "some string", :headers => { "Content-type" => "application/json; charset=utf-8" }).and_return(double("rsp", :body => "text"))
       indexer.post_json_string
     end
+
+    it "uses commitWithin when provided" do
+      indexer.send(:commit_within=, 1000)
+      indexer.current_json_string = "some string"
+      Typhoeus::Request.should_receive(:post).with("http://solr.xx:9333/solr/update/json?commitWithin=1000", :body => "some string", :headers => { "Content-type" => "application/json; charset=utf-8" }).and_return(double("rsp", :body => "text"))
+      indexer.post_json_string
+    end
     
     it "resets the current_json_string" do
       indexer.current_json_string = "some string"

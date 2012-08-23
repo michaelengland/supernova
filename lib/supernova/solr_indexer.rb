@@ -4,7 +4,7 @@ require "time"
 require "typhoeus"
 
 class Supernova::SolrIndexer
-  attr_accessor :options, :db, :ids, :local_solr, :current_json_string
+  attr_accessor :options, :db, :ids, :local_solr, :current_json_string, :commit_within
   attr_writer :debug
   
   include Supernova::Solr
@@ -253,7 +253,8 @@ class Supernova::SolrIndexer
   end
   
   def post_json_string
-    Typhoeus::Request.post("#{solr_update_url}?commit=true", 
+    commit = commit_within ? "commitWithin=#{commit_within}" : "commit=true"
+    Typhoeus::Request.post("#{solr_update_url}?#{commit}", 
       :body => self.current_json_string, 
       :headers => { "Content-type" => "application/json; charset=utf-8" }
     ).tap do |response|
