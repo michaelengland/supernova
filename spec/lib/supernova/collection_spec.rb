@@ -1,7 +1,7 @@
 require "spec_helper"
 
 describe "Supernova::Collection" do
-  let(:col) { Supernova::Collection.new(1, 10, 100) }
+  let(:col) { Supernova::Collection.new([], :total_count => 100).page(1).per(10) }
   
   let(:original_response_with_facets) do
     {"responseHeader"=>{"status"=>0, "QTime"=>2, "params"=>{"facet"=>"true", "wt"=>"json", "facet.query"=>["popularity_i:[* TO 1]", "popularity_i:[* TO 10]", "popularity_i:[* TO 100]"], "fq"=>"type:Offer", "q"=>"*:*"}}, "response"=>{"numFound"=>3, "start"=>0, "docs"=>[{"id"=>"offers/1", "type"=>"Offer", "popularity_i"=>1}, {"id"=>"offers/2", "type"=>"Offer", "popularity_i"=>10}, {"id"=>"offers/3", "type"=>"Offer", "popularity_i"=>100}]}, "facet_counts"=>{"facet_queries"=>{"popularity_i:[* TO 1]"=>1, "popularity_i:[* TO 10]"=>2, "popularity_i:[* TO 100]"=>3}, "facet_fields"=>{}, "facet_dates"=>{}, "facet_ranges"=>{}}}
@@ -46,7 +46,7 @@ describe "Supernova::Collection" do
   end
   
   describe "#ids" do
-    let(:col) { Supernova::Collection.new(1, 1, 100) }
+    let(:col) { Supernova::Collection.new([], :total_count => 100).page(1).per(1) }
     
     before(:each) do
       col.original_response = original_response_without_facets

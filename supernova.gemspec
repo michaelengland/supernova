@@ -15,7 +15,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
   gem.add_runtime_dependency("typhoeus")
   gem.add_runtime_dependency("activesupport",">=3.0.0")
-  gem.add_runtime_dependency("will_paginate")
+  gem.add_runtime_dependency("kaminari")
   gem.add_runtime_dependency("json")
   gem.add_development_dependency("activerecord-mysql2-adapter")
   gem.add_development_dependency("activerecord", ">=3.0.0")

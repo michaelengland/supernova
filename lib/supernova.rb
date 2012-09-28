@@ -1,7 +1,5 @@
 require "active_support/core_ext/object/blank"
 require "active_support/core_ext/hash"
-require "will_paginate/collection"
-require "will_paginate/array"
 
 module Supernova
   KM_TO_METER = 1000.0

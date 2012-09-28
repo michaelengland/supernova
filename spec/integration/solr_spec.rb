@@ -137,7 +137,7 @@ describe "Solr" do
       indexer = OfferIndex.new(:db => ActiveRecord::Base.connection)
       indexer.index!
       OfferIndex.search_scope.first.fetch("indexed_at_dt").should_not be_nil
-      OfferIndex.search_scope.total_entries.should == 2
+      OfferIndex.search_scope.total_count.should == 2
       results = OfferIndex.search_scope.order("user_id desc").populate.results
       results.count.should == 2
       results.first.fetch("user_id_i").should == 2
@@ -153,7 +153,7 @@ describe "Solr" do
       indexer = OfferIndex.new(:db => ActiveRecord::Base.connection, :max_rows_to_direct_index => 0)
       indexer.options[:use_json_file] = true
       indexer.index!
-      OfferIndex.search_scope.total_entries.should == 2
+      OfferIndex.search_scope.total_count.should == 2
       OfferIndex.search_scope.first.fetch("indexed_at_dt").should_not be_nil
       OfferIndex.search_scope.order("user_id desc").populate.results.map { |row| row.fetch("id") }.should == %w(offers/2 offers/1)
     end
@@ -191,11 +191,11 @@ describe "Solr" do
     end
     
     it "returns the correct page when set" do
-      new_criteria.paginate(:page => 10).current_page.should == 10
+      new_criteria.page(10).current_page.should == 10
     end
     
     it "the correct per_page when set" do
-      new_criteria.paginate(:per_page => 10).per_page.should == 10
+      new_criteria.per(10).per_page.should == 10
     end
     
     it "the correct per_page when not set" do
@@ -215,9 +215,9 @@ describe "Solr" do
     end
     
     describe "nearby search" do
-      { 49.kms => 1, 51.kms => 2 }.each do |distance, total_entries|
-        it "returns #{total_entries} for distance #{distance}" do
-          new_criteria.attribute_mapping(:location => { :type => :location }).near(47, 11).within(distance).total_entries.should == total_entries
+      { 49.kms => 1, 51.kms => 2 }.each do |distance, total_count|
+        it "returns #{total_count} for distance #{distance}" do
+          new_criteria.attribute_mapping(:location => { :type => :location }).near(47, 11).within(distance).total_count.should == total_count
         end
       end
     end
@@ -298,7 +298,7 @@ describe "Solr" do
           ]
         )
         server.commit
-        raise "There should be 3 docs" if new_criteria.total_entries != 3
+        raise "There should be 3 docs" if new_criteria.total_count != 3
         new_criteria.with(:user_id_i.not => nil).map { |h| h["id"] }.should == %w(1 2)
       end
       
@@ -316,8 +316,8 @@ describe "Solr" do
     end
     
     it "combines filters" do
-      new_criteria.with(:user_id_i => 1, :enabled_b => false).total_entries.should == 1
-      new_criteria.with(:user_id_i => 1, :enabled_b => true).total_entries.should == 0
+      new_criteria.with(:user_id_i => 1, :enabled_b => false).total_count.should == 1
+      new_criteria.with(:user_id_i => 1, :enabled_b => true).total_count.should == 0
     end
     
     it "uses without correctly" do
@@ -332,18 +332,18 @@ describe "Solr" do
     end
     
     it "uses the correct pagination attributes" do
-      new_criteria.with(:user_id_i => 1, :enabled_b => false).total_entries.should == 1
+      new_criteria.with(:user_id_i => 1, :enabled_b => false).total_count.should == 1
       new_criteria.with(:user_id_i => 1, :enabled_b => false).length.should == 1
-      new_criteria.with(:user_id_i => 1, :enabled_b => false).paginate(:page => 10).total_entries.should == 1
-      new_criteria.with(:user_id_i => 1, :enabled_b => false).paginate(:page => 10).length.should == 0
+      new_criteria.with(:user_id_i => 1, :enabled_b => false).page(1).total_count.should == 1
+      new_criteria.with(:user_id_i => 1, :enabled_b => false).page(10).length.should == 0
       
-      new_criteria.paginate(:per_page => 1, :page => 1).map { |row| row.fetch("id") }.should == %w(1)
-      new_criteria.paginate(:per_page => 1, :page => 2).map { |row| row.fetch("id")  }.should == %w(2)
+      new_criteria.page(1).per(1).map { |row| row.fetch("id") }.should == %w(1)
+      new_criteria.page(2).per(1).map { |row| row.fetch("id")  }.should == %w(2)
     end
     
     it "handels empty results correctly" do
       results = new_criteria.with(:user_id_i => 1, :enabled_b => true)
-      results.total_entries.should == 0
+      results.total_count.should == 0
       results.current_page.should == 1
     end
     
@@ -404,7 +404,7 @@ describe "Solr" do
       result = new_criteria.ids
       result.should be_kind_of(Supernova::Collection)
       result.should == [1, 2]
-      result.total_entries.should == 2
+      result.total_count.should == 2
     end
     
     it "does include facets" do

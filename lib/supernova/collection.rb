@@ -1,6 +1,7 @@
-require "will_paginate"
+require 'kaminari'
+require 'kaminari/models/array_extension'
 
-class Supernova::Collection < WillPaginate::Collection
+class Supernova::Collection < Kaminari::PaginatableArray
   attr_accessor :original_response, :facets, :original_criteria
   
   def raw_facet_queries

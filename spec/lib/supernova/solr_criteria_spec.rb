@@ -293,29 +293,29 @@ describe "Supernova::SolrCriteria" do
       end
       
       it "overwrites pagination with rows" do
-        criteria.paginate(:per_page => 9, :page => 1).rows(11).to_params[:rows].should == 11
+        criteria.page(1).per(9).rows(11).to_params[:rows].should == 11
       end
       
       it "overwrites pagination with start" do
-        criteria.paginate(:per_page => 9, :page => 1).start(100).rows(11).to_params[:start].should == 100
+        criteria.page(1).per(9).start(100).rows(11).to_params[:start].should == 100
       end
     end
     
     describe "pagination" do
       it "sets the correct rows" do
-        criteria.paginate(:page => 1, :per_page => 10).to_params[:rows].should == 10
+        criteria.page(1).per(10).to_params[:rows].should == 10
       end
       
       it "sets the correct start when page is nil" do
-        criteria.paginate(:per_page => 10).to_params[:start].should == 0
+        criteria.per(10).to_params[:start].should == 0
       end
       
       it "sets the correct start when page is 1" do
-        criteria.paginate(:per_page => 10, :page => 1).to_params[:start].should == 0
+        criteria.page(1).per(10).to_params[:start].should == 0
       end
       
       it "sets the correct start when page is 1" do
-        criteria.paginate(:per_page => 10, :page => 2).to_params[:start].should == 10
+        criteria.page(2).per(10).to_params[:start].should == 10
       end
     end
     
@@ -349,7 +349,7 @@ describe "Supernova::SolrCriteria" do
   end
   
   describe "#ids" do
-    let(:response) { Supernova::Collection.new(1, 1, 100) }
+    let(:response) { Supernova::Collection.new([], :total_count => 100).page(1).per(1) }
     
     before(:each) do
       response.original_response = facet_response
@@ -420,23 +420,23 @@ describe "Supernova::SolrCriteria" do
     end
     
     it "sets the correct page when page is 1" do
-      criteria.paginate(:page => 1).execute.current_page.should == 1
+      criteria.page(1).execute.current_page.should == 1
     end
     
     it "sets the correct page when page is 2" do
-      criteria.paginate(:page => 2).execute.current_page.should == 2
+      criteria.page(2).execute.current_page.should == 2
     end
     
     it "sets the correct per_page when zero" do
-      criteria.paginate(:page => 2, :per_page => nil).execute.per_page.should == 25
+      pp criteria.page(2).per(nil).execute.limit_value.should == 25
     end
     
     it "sets the custom per_page when given" do
-      criteria.paginate(:page => 2, :per_page => 10).execute.per_page.should == 10
+      criteria.page(2).per(10).execute.limit_value.should == 10
     end
     
-    it "sets the correct total_entries" do
-      criteria.paginate(:page => 2, :per_page => 10).execute.total_entries.should == 2
+    it "sets the correct total_count" do
+      criteria.page(2).per(10).execute.total_count.should == 2
     end
     
     it "sets the correct facets" do
@@ -529,19 +529,19 @@ describe "Supernova::SolrCriteria" do
     end
     
     it "returns 1 when page is set to nil" do
-      criteria.paginate(:page => nil).current_page.should == 1
+      criteria.page(nil).current_page.should == 1
     end
     
     it "returns 1 when page is set to nil" do
-      criteria.paginate(:page => 1).current_page.should == 1
+      criteria.page(1).current_page.should == 1
     end
     
     it "returns 1 when page is set to nil" do
-      criteria.paginate(:page => 0).current_page.should == 1
+      criteria.page(0).current_page.should == 1
     end
     
     it "returns 2 when page is set to 2" do
-      criteria.paginate(:page => 2).current_page.should == 2
+      criteria.page(2).current_page.should == 2
     end
   end
   
@@ -551,15 +551,15 @@ describe "Supernova::SolrCriteria" do
     end
     
     it "returns 25 when set to nil" do
-      criteria.paginate(:page => 3, :per_page => nil).per_page.should == 25
+      criteria.page(3).per(nil).per_page.should == 25
     end
     
     it "returns 0 when set to 0" do
-      criteria.paginate(:page => 3, :per_page => 0).per_page.should == 0
+      criteria.page(3).per(0).per_page.should == 0
     end
     
     it "returns the custom value when set" do
-      criteria.paginate(:page => 3, :per_page => 10).per_page.should == 10
+      criteria.page(3).per(10).per_page.should == 10
     end
   end
 end

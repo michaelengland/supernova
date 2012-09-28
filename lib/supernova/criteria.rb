@@ -104,10 +104,14 @@ class Supernova::Criteria
     merge_filters :conditions, filters
   end
 
-  def paginate(pagination_options)
-    merge_search_options :pagination, pagination_options
+  def page(page)
+    merge_search_options :page, page
   end
-  
+
+  def per(per)
+    merge_search_options :per, per
+  end
+
   def rows(rows)
     merge_search_options :rows, rows
   end
@@ -226,21 +230,17 @@ class Supernova::Criteria
   end
   
   def current_page
-    pagination_attribute_when_greater_zero(:page) || 1
+    if self.search_options[:page].to_i > 0
+      self.search_options[:page]
+    else
+      1
+    end
   end
   
   def per_page
-    ret = self.search_options[:pagination][:per_page] if self.search_options[:pagination]
-    ret = DEFAULT_PER_PAGE if ret.nil?
-    ret
+    self.search_options[:per] || DEFAULT_PER_PAGE
   end
   
-  def pagination_attribute_when_greater_zero(attribute)
-    if self.search_options[:pagination] && self.search_options[:pagination][attribute].to_i > 0
-      self.search_options[:pagination][attribute] 
-    end
-  end
-
   def implement_in_subclass
     raise "implement in subclass"
   end

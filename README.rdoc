@@ -31,13 +31,13 @@
 
 === Anonymous Scopes
 
-  scope = Offer.order("popularity desc").with(:city => "Hamburg").paginate(:page => 2, :per_page => 10)
+  scope = Offer.order("popularity desc").with(:city => "Hamburg").page(2).per(10)
   
   # no query sent yet
   # query is sent e.g. when
   
   scope.each { |offer| puts offer.city }                            # objects of current page are iterated
-  scope.total_entries                                               # no objects loaded though
+  scope.total_count                                                 # no objects loaded though
   scope.ids                                                         # no objects loaded, only ids are returned
   scope.first or scope.last                                         # all objects are loaded, only first or last in "page" is returned
 

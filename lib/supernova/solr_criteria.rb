@@ -67,7 +67,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
   end
 
   def use_pagination?
-    self.search_options[:pagination] || self.search_options[:rows] || self.search_options[:start]
+    self.search_options[:page] || self.search_options[:per] || self.search_options[:rows] || self.search_options[:start]
   end
 
   def rows_attribute
@@ -167,7 +167,7 @@ class Supernova::SolrCriteria < Supernova::Criteria
   
   def reverse_lookup_solr_field(solr_field)
     if search_options[:attribute_mapping]
-      search_options[:attribute_mapping].each do |field, options|
+      search_options[:attribute_mapping].each do |field, _|
         return field if solr_field.to_s == solr_field_from_field(field)
       end
     end
@@ -264,7 +264,8 @@ class Supernova::SolrCriteria < Supernova::Criteria
   end
   
   def collection_from_json(json)
-    collection = Supernova::Collection.new(current_page, per_page == 0 ? 1 : per_page, json["response"]["numFound"])
+    collection = Supernova::Collection.new([], :total_count => json["response"]["numFound"]).
+        page(current_page).per(per_page == 0 ? 1 : per_page)
     collection.original_criteria = self.clone
     collection.original_response = json
     collection.facets = hashify_facets_from_response(json)

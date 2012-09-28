@@ -1,10 +1,10 @@
-require "spec_helper"
+require "spec_helper_ar"
 require "ostruct"
 
 describe "Supernova::Criteria" do
   let(:scope) { Supernova::Criteria.new }
   before(:each) do
-    scope.stub!(:execute).and_return [].paginate(:page => 1)
+    scope.stub!(:execute).and_return Kaminari.paginate_array([]).page(1)
   end
   
   describe "#initialize" do
@@ -36,7 +36,7 @@ describe "Supernova::Criteria" do
     [:limit, 10],
     [:with, { :stars => 2 }],
     [:conditions, { :stars => 2 }],
-    [:paginate, { :stars => 2 }],
+    [:page, { :stars => 2 }],
     [:select, %w(stars)],
     [:near, "test"],
     [:within, 10],
@@ -109,16 +109,17 @@ describe "Supernova::Criteria" do
   end
   
   it "sets the correct pagination fields" do
-    scope.paginate(:page => 9, :per_page => 2).search_options[:pagination].should == { :page => 9, :per_page => 2 }
+    scope.page(9).search_options[:page] == { :page => 9 }
+    scope.per(2).search_options[:per] == { :per => 2 }
   end
   
   describe "#per_page" do
     it "allows setting of pagination to 0" do
-      scope.paginate(:per_page => 0).per_page.should == 0
+      scope.per(0).per_page.should == 0
     end
     
     it "sets the per_page to the default when setting to nil" do
-      scope.paginate(:per_page => nil).per_page.should == 25
+      scope.per(nil).per_page.should == 25
     end
   end
   
@@ -223,7 +224,7 @@ describe "Supernova::Criteria" do
       scope.stub!(:to_a).and_return array_double
     end
     
-    [ :first, :each, :count, :last, :total_entries ].each do |method|
+    [ :first, :each, :count, :last, :total_count ].each do |method|
       it "forwards #{method} to array" do
         results = double("ret")
         scope.instance_variable_set("@results", results)
