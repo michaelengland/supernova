@@ -41,6 +41,12 @@ pkg
 # For vim:
 #*.swp
 
+# For rvm:
+.rvmrc
+
+# For RubyMine:
+.idea*
+
 # For redcar:
 #.redcar
 
